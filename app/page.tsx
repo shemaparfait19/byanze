@@ -1,84 +1,113 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Plus, FileText, Users, TrendingUp, Download, Database, Bell } from 'lucide-react'
-import { InvoiceForm } from '@/components/invoice-form'
-import { InvoiceList } from '@/components/invoice-list'
-import { ClientManagement } from '@/components/client-management'
-import { DailyReport } from '@/components/daily-report'
-import { LoadingSpinner } from '@/components/loading-spinner'
-import { DatabaseSetup } from '@/components/database-setup'
-import { PickupNotifications } from '@/components/pickup-notifications'
-import { useSupabaseStore } from '@/lib/supabase-store'
-import { formatCurrency } from '@/lib/utils'
-import { RealTimeStatusIndicator } from '@/components/real-time-status-indicator'
-import { InvoiceDashboardCard } from '@/components/invoice-dashboard-card'
-import { InvoiceStatusManager } from '@/components/invoice-status-manager'
-import { InvoicePrint } from '@/components/invoice-print'
-import { Invoice } from '@/types'
-import { AdvancedReports } from '@/components/advanced-reports'
+import { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Plus,
+  FileText,
+  Users,
+  TrendingUp,
+  Download,
+  Database,
+  Bell,
+} from "lucide-react";
+import { InvoiceForm } from "@/components/invoice-form";
+import { InvoiceList } from "@/components/invoice-list";
+import { ClientManagement } from "@/components/client-management";
+import { DailyReport } from "@/components/daily-report";
+import { LoadingSpinner } from "@/components/loading-spinner";
+import { DatabaseSetup } from "@/components/database-setup";
+import { PickupNotifications } from "@/components/pickup-notifications";
+import { useSupabaseStore } from "@/lib/supabase-store";
+import { Input } from "@/components/ui/input";
+import { formatCurrency } from "@/lib/utils";
+import { RealTimeStatusIndicator } from "@/components/real-time-status-indicator";
+import { InvoiceDashboardCard } from "@/components/invoice-dashboard-card";
+import { InvoiceStatusManager } from "@/components/invoice-status-manager";
+import { InvoicePrint } from "@/components/invoice-print";
+import { Invoice } from "@/types";
+import { AdvancedReports } from "@/components/advanced-reports";
 
-type View = 'dashboard' | 'create-invoice' | 'invoices' | 'clients' | 'reports' | 'setup'
+type View =
+  | "dashboard"
+  | "create-invoice"
+  | "invoices"
+  | "clients"
+  | "reports"
+  | "setup";
 
 export default function HomePage() {
-  const [currentView, setCurrentView] = useState<View>('dashboard')
-  const [editingInvoice, setEditingInvoice] = useState<string | null>(null)
-  const [viewInvoice, setViewInvoice] = useState<Invoice | null>(null)
-  const { 
-    invoices, 
-    clients, 
-    initializeDatabase, 
-    loading, 
-    error, 
+  const [currentView, setCurrentView] = useState<View>("dashboard");
+  const [editingInvoice, setEditingInvoice] = useState<string | null>(null);
+  const [viewInvoice, setViewInvoice] = useState<Invoice | null>(null);
+  const {
+    invoices,
+    clients,
+    initializeDatabase,
+    loading,
+    error,
     isInitialized,
     databaseReady,
-    getPickupNotifications
-  } = useSupabaseStore()
+    getPickupNotifications,
+    currentUserPhone,
+    setCurrentUser,
+  } = useSupabaseStore();
+  const [phoneInput, setPhoneInput] = useState("");
 
   useEffect(() => {
-    initializeDatabase()
-  }, [initializeDatabase])
+    initializeDatabase();
+  }, [initializeDatabase]);
 
   // Refresh data every 5 minutes to check for new pickups
   useEffect(() => {
     if (databaseReady && isInitialized) {
       const interval = setInterval(() => {
         // Silently refresh data for notifications
-        initializeDatabase()
-      }, 5 * 60 * 1000) // 5 minutes
+        initializeDatabase();
+      }, 5 * 60 * 1000); // 5 minutes
 
-      return () => clearInterval(interval)
+      return () => clearInterval(interval);
     }
-  }, [databaseReady, isInitialized, initializeDatabase])
+  }, [databaseReady, isInitialized, initializeDatabase]);
 
   useEffect(() => {
     return () => {
       // Cleanup real-time subscriptions on unmount
-      const { unsubscribeFromRealTimeUpdates } = useSupabaseStore.getState()
-      unsubscribeFromRealTimeUpdates()
-    }
-  }, [])
+      const { unsubscribeFromRealTimeUpdates } = useSupabaseStore.getState();
+      unsubscribeFromRealTimeUpdates();
+    };
+  }, []);
 
-  const todayInvoices = invoices.filter(invoice => {
-    const today = new Date().toDateString()
-    return new Date(invoice.createdAt).toDateString() === today
-  })
+  const todayInvoices = invoices.filter((invoice) => {
+    const today = new Date().toDateString();
+    return new Date(invoice.createdAt).toDateString() === today;
+  });
 
-  const totalToday = todayInvoices.reduce((sum, invoice) => sum + invoice.total, 0)
-  const completedToday = todayInvoices.filter(inv => inv.status === 'completed').length
-  const pickupNotifications = getPickupNotifications()
+  const totalToday = todayInvoices.reduce(
+    (sum, invoice) => sum + invoice.total,
+    0
+  );
+  const completedToday = todayInvoices.filter(
+    (inv) => inv.status === "completed"
+  ).length;
+  const pickupNotifications = getPickupNotifications();
 
   const handleEditInvoice = (invoiceId: string) => {
-    setEditingInvoice(invoiceId)
-    setCurrentView('create-invoice')
-  }
+    setEditingInvoice(invoiceId);
+    setCurrentView("create-invoice");
+  };
 
   const handleNewInvoice = () => {
-    setEditingInvoice(null)
-    setCurrentView('create-invoice')
-  }
+    setEditingInvoice(null);
+    setCurrentView("create-invoice");
+  };
 
   // Show database setup if not ready
   if (!databaseReady && !loading) {
@@ -103,7 +132,7 @@ export default function HomePage() {
           <DatabaseSetup />
         </main>
       </div>
-    )
+    );
   }
 
   // Show loading spinner on initial load
@@ -124,46 +153,82 @@ export default function HomePage() {
           </p>
         </main>
       </div>
-    )
+    );
+  }
+
+  // Simple phone gate for non-admin app
+  if (!currentUserPhone) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Enter Your Phone Number</CardTitle>
+            <CardDescription>
+              Use the phone number assigned by admin to access the system.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Input
+              placeholder="+2507XXXXXXXX"
+              value={phoneInput}
+              onChange={(e) => setPhoneInput(e.target.value)}
+            />
+            <Button
+              className="w-full"
+              onClick={() => setCurrentUser(phoneInput)}
+              disabled={!phoneInput}
+            >
+              Continue
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   const renderContent = () => {
     switch (currentView) {
-      case 'setup':
-        return <DatabaseSetup />
-      case 'create-invoice':
+      case "setup":
+        return <DatabaseSetup />;
+      case "create-invoice":
         return (
           <InvoiceForm
             editingId={editingInvoice}
             onSave={() => {
-              setCurrentView('invoices')
-              setEditingInvoice(null)
+              setCurrentView("invoices");
+              setEditingInvoice(null);
             }}
             onCancel={() => {
-              setCurrentView('dashboard')
-              setEditingInvoice(null)
+              setCurrentView("dashboard");
+              setEditingInvoice(null);
             }}
           />
-        )
-      case 'invoices':
-        return <InvoiceList onEdit={handleEditInvoice} />
-      case 'clients':
-        return <ClientManagement />
-      case 'reports':
-        return <AdvancedReports />
+        );
+      case "invoices":
+        return <InvoiceList onEdit={handleEditInvoice} />;
+      case "clients":
+        return <ClientManagement />;
+      case "reports":
+        return <AdvancedReports />;
       default:
         return (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h1 className="text-3xl font-bold">Century Dry Cleaner Dashboard</h1>
+              <h1 className="text-3xl font-bold">
+                Century Dry Cleaner Dashboard
+              </h1>
               <div className="flex items-center gap-2">
                 {pickupNotifications.length > 0 && (
                   <div className="flex items-center gap-1 text-orange-600 bg-orange-100 px-3 py-1 rounded-full text-sm">
                     <Bell className="h-4 w-4" />
-                    {pickupNotifications.length} pickup{pickupNotifications.length > 1 ? 's' : ''} due
+                    {pickupNotifications.length} pickup
+                    {pickupNotifications.length > 1 ? "s" : ""} due
                   </div>
                 )}
-                <Button onClick={handleNewInvoice} className="flex items-center gap-2">
+                <Button
+                  onClick={handleNewInvoice}
+                  className="flex items-center gap-2"
+                >
                   <Plus className="h-4 w-4" />
                   New Invoice
                 </Button>
@@ -177,7 +242,8 @@ export default function HomePage() {
                   <div className="flex items-center gap-2 text-green-700">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                     <span className="text-sm font-medium">
-                      Connected to Supabase - Your data is safely stored in the cloud
+                      Connected to Supabase - Your data is safely stored in the
+                      cloud
                     </span>
                     {pickupNotifications.length > 0 && (
                       <span className="ml-4 text-orange-700 bg-orange-200 px-2 py-1 rounded text-xs">
@@ -193,11 +259,15 @@ export default function HomePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Today's Revenue</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Today's Revenue
+                  </CardTitle>
                   <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{formatCurrency(totalToday)}</div>
+                  <div className="text-2xl font-bold">
+                    {formatCurrency(totalToday)}
+                  </div>
                   <p className="text-xs text-muted-foreground">
                     {todayInvoices.length} invoices today
                   </p>
@@ -206,7 +276,9 @@ export default function HomePage() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Invoices</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Total Invoices
+                  </CardTitle>
                   <FileText className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -219,7 +291,9 @@ export default function HomePage() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Clients</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Total Clients
+                  </CardTitle>
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -232,14 +306,16 @@ export default function HomePage() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Pending Pickups</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Pending Pickups
+                  </CardTitle>
                   <Bell className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-orange-600">{pickupNotifications.length}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Due today
-                  </p>
+                  <div className="text-2xl font-bold text-orange-600">
+                    {pickupNotifications.length}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Due today</p>
                 </CardContent>
               </Card>
             </div>
@@ -248,7 +324,9 @@ export default function HomePage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Recent Invoices</CardTitle>
-                  <CardDescription>Latest invoices with real-time status updates</CardDescription>
+                  <CardDescription>
+                    Latest invoices with real-time status updates
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {invoices.length > 0 ? (
@@ -276,19 +354,34 @@ export default function HomePage() {
                   <CardDescription>Common tasks</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <Button onClick={handleNewInvoice} className="w-full justify-start">
+                  <Button
+                    onClick={handleNewInvoice}
+                    className="w-full justify-start"
+                  >
                     <Plus className="h-4 w-4 mr-2" />
                     Create New Invoice
                   </Button>
-                  <Button onClick={() => setCurrentView('clients')} variant="outline" className="w-full justify-start">
+                  <Button
+                    onClick={() => setCurrentView("clients")}
+                    variant="outline"
+                    className="w-full justify-start"
+                  >
                     <Users className="h-4 w-4 mr-2" />
                     Manage Clients
                   </Button>
-                  <Button onClick={() => setCurrentView('reports')} variant="outline" className="w-full justify-start">
+                  <Button
+                    onClick={() => setCurrentView("reports")}
+                    variant="outline"
+                    className="w-full justify-start"
+                  >
                     <TrendingUp className="h-4 w-4 mr-2" />
                     View Reports
                   </Button>
-                  <Button onClick={() => setCurrentView('invoices')} variant="outline" className="w-full justify-start">
+                  <Button
+                    onClick={() => setCurrentView("invoices")}
+                    variant="outline"
+                    className="w-full justify-start"
+                  >
                     <FileText className="h-4 w-4 mr-2" />
                     All Invoices
                   </Button>
@@ -296,23 +389,23 @@ export default function HomePage() {
               </Card>
             </div>
           </div>
-        )
+        );
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-background">
       {/* Pickup Notifications - Fixed position overlay */}
       <PickupNotifications />
-      
+
       <nav className="border-b">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold">Century Dry Cleaner</h1>
             <div className="flex space-x-4">
               <Button
-                variant={currentView === 'dashboard' ? 'default' : 'ghost'}
-                onClick={() => setCurrentView('dashboard')}
+                variant={currentView === "dashboard" ? "default" : "ghost"}
+                onClick={() => setCurrentView("dashboard")}
               >
                 Dashboard
                 {pickupNotifications.length > 0 && (
@@ -322,26 +415,26 @@ export default function HomePage() {
                 )}
               </Button>
               <Button
-                variant={currentView === 'invoices' ? 'default' : 'ghost'}
-                onClick={() => setCurrentView('invoices')}
+                variant={currentView === "invoices" ? "default" : "ghost"}
+                onClick={() => setCurrentView("invoices")}
               >
                 Invoices
               </Button>
               <Button
-                variant={currentView === 'clients' ? 'default' : 'ghost'}
-                onClick={() => setCurrentView('clients')}
+                variant={currentView === "clients" ? "default" : "ghost"}
+                onClick={() => setCurrentView("clients")}
               >
                 Clients
               </Button>
               <Button
-                variant={currentView === 'reports' ? 'default' : 'ghost'}
-                onClick={() => setCurrentView('reports')}
+                variant={currentView === "reports" ? "default" : "ghost"}
+                onClick={() => setCurrentView("reports")}
               >
                 Reports
               </Button>
               <Button
-                variant={currentView === 'setup' ? 'default' : 'ghost'}
-                onClick={() => setCurrentView('setup')}
+                variant={currentView === "setup" ? "default" : "ghost"}
+                onClick={() => setCurrentView("setup")}
               >
                 Setup
               </Button>
@@ -350,29 +443,32 @@ export default function HomePage() {
         </div>
       </nav>
 
-      <main className="container mx-auto px-4 py-8">
-        {renderContent()}
-      </main>
+      <main className="container mx-auto px-4 py-8">{renderContent()}</main>
       {viewInvoice && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-4 border-b flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Invoice Details & Status</h2>
+              <h2 className="text-lg font-semibold">
+                Invoice Details & Status
+              </h2>
               <Button variant="ghost" onClick={() => setViewInvoice(null)}>
                 ×
               </Button>
             </div>
             <div className="p-4 grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div>{viewInvoice && <InvoicePrint invoice={viewInvoice} />}</div>
               <div>
-                {viewInvoice && <InvoicePrint invoice={viewInvoice} />}
-              </div>
-              <div>
-                {viewInvoice && <InvoiceStatusManager invoice={viewInvoice} showDetails={true} />}
+                {viewInvoice && (
+                  <InvoiceStatusManager
+                    invoice={viewInvoice}
+                    showDetails={true}
+                  />
+                )}
               </div>
             </div>
           </div>
         </div>
       )}
     </div>
-  )
+  );
 }
