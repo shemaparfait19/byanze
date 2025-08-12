@@ -82,33 +82,41 @@ export const useSupabaseStore = create<SupabaseStore>((set, get) => ({
 
   setCurrentUser: async (phone, name) => {
     const normalized = phone.trim();
-    set({ currentUserPhone: normalized, currentUserName: name || null });
     try {
-      // ensure user exists in users table (upsert by phone)
-      const { data: existing } = await supabase
+      // Check that user exists in users table (admin-managed accounts)
+      const { data: existing, error } = await supabase
         .from("users")
-        .select("*")
+        .select("name, phone")
         .eq("phone", normalized)
         .maybeSingle();
 
-      if (!existing) {
-        await supabase
-          .from("users")
-          .insert({
-            phone: normalized,
-            name: name || normalized,
-            role: "user",
-          });
-      } else if (name && existing.name !== name) {
-        await supabase.from("users").update({ name }).eq("phone", normalized);
+      if (error) {
+        console.warn("User lookup failed", error);
       }
+
+      if (!existing) {
+        toast({
+          title: "Account not found",
+          description: "Ask admin to create your account first.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const resolvedName = existing.name || name || null;
       // store locally
       if (typeof window !== "undefined") {
         localStorage.setItem("ims_user_phone", normalized);
-        if (name) localStorage.setItem("ims_user_name", name);
+        if (resolvedName) localStorage.setItem("ims_user_name", resolvedName);
       }
+      set({ currentUserPhone: normalized, currentUserName: resolvedName });
     } catch (e) {
       console.warn("Failed to ensure user record", e);
+      toast({
+        title: "Login failed",
+        description: "Please try again.",
+        variant: "destructive",
+      });
     }
   },
 
@@ -171,7 +179,22 @@ export const useSupabaseStore = create<SupabaseStore>((set, get) => ({
           const phone = localStorage.getItem("ims_user_phone");
           const name = localStorage.getItem("ims_user_name");
           if (phone) {
-            set({ currentUserPhone: phone, currentUserName: name });
+            // Try to resolve a friendly name from users table if not present
+            let resolvedName = name || null;
+            try {
+              if (!resolvedName) {
+                const { data: u } = await supabase
+                  .from("users")
+                  .select("name")
+                  .eq("phone", phone)
+                  .maybeSingle();
+                if (u?.name) {
+                  resolvedName = u.name as string;
+                  localStorage.setItem("ims_user_name", resolvedName);
+                }
+              }
+            } catch {}
+            set({ currentUserPhone: phone, currentUserName: resolvedName });
           }
         }
         await get().loadData();
@@ -489,6 +512,8 @@ export const useSupabaseStore = create<SupabaseStore>((set, get) => ({
             pickupDate: invoice.pickup_date || undefined,
             pickupTime: invoice.pickup_time || undefined,
             notes: invoice.notes || undefined,
+            createdByName: (invoice as any).created_by_name || undefined,
+            createdByPhone: (invoice as any).created_by_phone || undefined,
             createdAt: invoice.created_at,
             updatedAt: invoice.updated_at,
           };
@@ -528,6 +553,8 @@ export const useSupabaseStore = create<SupabaseStore>((set, get) => ({
         pickup_date: invoiceData.pickupDate || null,
         pickup_time: invoiceData.pickupTime || null,
         notes: invoiceData.notes || null,
+        created_by_name: get().currentUserName || null,
+        created_by_phone: get().currentUserPhone || null,
       });
 
       // Insert invoice
@@ -542,6 +569,8 @@ export const useSupabaseStore = create<SupabaseStore>((set, get) => ({
           pickup_date: invoiceData.pickupDate || null,
           pickup_time: invoiceData.pickupTime || null,
           notes: invoiceData.notes || null,
+          created_by_name: get().currentUserName || null,
+          created_by_phone: get().currentUserPhone || null,
         })
         .select()
         .single();

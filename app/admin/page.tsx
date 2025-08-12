@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -14,12 +14,20 @@ import Link from "next/link";
 
 export default function AdminGate() {
   const [code, setCode] = useState("");
-  const [granted, setGranted] = useState(false);
+  const [granted, setGranted] = useState<boolean>(false);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+    try {
+      const ok = localStorage.getItem("ims_admin_granted") === "true";
+      setGranted(ok);
+    } catch {}
+  }, []);
   const PASSCODE = "2004";
 
-  if (!granted) {
+  if (!mounted || !granted) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="min-h-[calc(100vh-56px)] bg-background flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Admin Access</CardTitle>
@@ -34,7 +42,15 @@ export default function AdminGate() {
             />
             <Button
               className="w-full"
-              onClick={() => setGranted(code === PASSCODE)}
+              onClick={() => {
+                const ok = code === PASSCODE;
+                setGranted(ok);
+                if (ok) localStorage.setItem("ims_admin_granted", "true");
+                // dispatch a custom event to notify layouts to re-read granted state
+                try {
+                  window.dispatchEvent(new Event("ims_admin_granted"));
+                } catch {}
+              }}
               disabled={!code}
             >
               Enter
@@ -46,7 +62,7 @@ export default function AdminGate() {
   }
 
   return (
-    <main className="container mx-auto px-4 py-8 space-y-6">
+    <div className="container mx-auto px-4 py-8 space-y-6">
       <h1 className="text-2xl font-bold">Admin Portal</h1>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Link href="/admin/reports">
@@ -78,6 +94,6 @@ export default function AdminGate() {
           </Card>
         </Link>
       </div>
-    </main>
+    </div>
   );
 }

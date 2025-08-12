@@ -1,82 +1,225 @@
-'use client'
+"use client";
 
-import { forwardRef } from 'react'
-import { formatCurrency } from '@/lib/utils'
-import type { Invoice } from '@/lib/types'
+import { forwardRef } from "react";
+import { formatCurrency } from "@/lib/utils";
+import type { Invoice } from "@/lib/types";
 
 interface InvoicePrintProps {
-  invoice: Invoice
+  invoice: Invoice;
 }
 
 export const InvoicePrint = forwardRef<HTMLDivElement, InvoicePrintProps>(
   ({ invoice }, ref) => {
     return (
-      <div ref={ref} className="bg-white p-8 max-w-4xl mx-auto print:shadow-none shadow-lg">
+      <div
+        ref={ref}
+        className="bg-white text-black min-h-[297mm] w-[210mm] p-6 mx-auto print:p-6 print:m-0 print:w-full print:min-h-full font-sans"
+        style={{
+          fontSize: "14px",
+          lineHeight: "1.4",
+          printColorAdjust: "exact",
+          WebkitPrintColorAdjust: "exact",
+        }}
+      >
         {/* Header */}
-        <div className="border-b-2 border-gray-300 pb-6 mb-6">
+        <div className="border-b-4 border-black pb-4 mb-6">
           <div className="flex justify-between items-start">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">INVOICE</h1>
-              <p className="text-gray-600 mt-2">Century Dry Cleaner</p>
+              <h1
+                className="text-4xl font-black tracking-wider mb-2"
+                style={{ fontSize: "32px", fontWeight: "900" }}
+              >
+                INVOICE
+              </h1>
+              <h2
+                className="text-xl font-bold"
+                style={{ fontSize: "18px", fontWeight: "700" }}
+              >
+                Century Dry Cleaner
+              </h2>
             </div>
             <div className="text-right">
-              <div className="text-2xl font-bold text-blue-600">#{invoice.id}</div>
-              <p className="text-gray-600">Date: {new Date(invoice.createdAt).toLocaleDateString()}</p>
+              <div
+                className="text-3xl font-black mb-2"
+                style={{ fontSize: "28px", fontWeight: "900" }}
+              >
+                #{invoice.id}
+              </div>
+              <div
+                className="text-base font-semibold"
+                style={{ fontSize: "14px", fontWeight: "600" }}
+              >
+                <p className="mb-1">
+                  Date: {new Date(invoice.createdAt).toLocaleDateString()}
+                </p>
+                {invoice.createdByName && (
+                  <p>Served by: {invoice.createdByName}</p>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
         {/* Client Information */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div className="grid grid-cols-2 gap-8 mb-6">
           <div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-3">Bill To:</h3>
-            <div className="text-gray-700">
-              <p className="font-medium text-lg">{invoice.client.name}</p>
-              <p>{invoice.client.phone}</p>
-              {invoice.client.address && <p>{invoice.client.address}</p>}
+            <h3
+              className="text-lg font-black mb-3 border-b-2 border-black pb-1"
+              style={{ fontSize: "16px", fontWeight: "900" }}
+            >
+              BILL TO:
+            </h3>
+            <div className="space-y-1">
+              <p
+                className="font-bold text-lg"
+                style={{ fontSize: "16px", fontWeight: "700" }}
+              >
+                {invoice.client.name}
+              </p>
+              <p
+                className="font-semibold"
+                style={{ fontSize: "14px", fontWeight: "600" }}
+              >
+                {invoice.client.phone}
+              </p>
+              {invoice.client.address && (
+                <p
+                  className="font-medium"
+                  style={{ fontSize: "13px", fontWeight: "500" }}
+                >
+                  {invoice.client.address}
+                </p>
+              )}
             </div>
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-3">Invoice Details:</h3>
-            <div className="text-gray-700 space-y-1">
-              <p><span className="font-medium">Status:</span> 
-                <span className={`ml-2 px-2 py-1 rounded text-sm ${
-                  invoice.status === 'completed' ? 'bg-green-100 text-green-800' :
-                  invoice.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-red-100 text-red-800'
-                }`}>
+            <h3
+              className="text-lg font-black mb-3 border-b-2 border-black pb-1"
+              style={{ fontSize: "16px", fontWeight: "900" }}
+            >
+              INVOICE DETAILS:
+            </h3>
+            <div className="space-y-2">
+              <div className="flex items-center">
+                <span
+                  className="font-bold mr-2"
+                  style={{ fontSize: "14px", fontWeight: "700" }}
+                >
+                  Status:
+                </span>
+                <span
+                  className={`px-3 py-1 rounded-sm text-sm font-bold border-2 ${
+                    invoice.status === "completed"
+                      ? "bg-white text-black border-black"
+                      : invoice.status === "pending"
+                      ? "bg-black text-white border-black"
+                      : "bg-gray-200 text-black border-black"
+                  }`}
+                  style={{ fontSize: "12px", fontWeight: "700" }}
+                >
                   {invoice.status.toUpperCase()}
                 </span>
+              </div>
+              <p
+                className="font-semibold"
+                style={{ fontSize: "14px", fontWeight: "600" }}
+              >
+                <span className="font-bold">Payment:</span>{" "}
+                {invoice.paymentMethod}
               </p>
-              <p><span className="font-medium">Payment Method:</span> {invoice.paymentMethod}</p>
               {invoice.pickupDate && (
-                <p><span className="font-medium">Pickup Date:</span> {invoice.pickupDate}</p>
+                <p
+                  className="font-semibold"
+                  style={{ fontSize: "14px", fontWeight: "600" }}
+                >
+                  <span className="font-bold">Pickup Date:</span>{" "}
+                  {invoice.pickupDate}
+                </p>
               )}
               {invoice.pickupTime && (
-                <p><span className="font-medium">Pickup Time:</span> {invoice.pickupTime}</p>
+                <p
+                  className="font-semibold"
+                  style={{ fontSize: "14px", fontWeight: "600" }}
+                >
+                  <span className="font-bold">Pickup Time:</span>{" "}
+                  {invoice.pickupTime}
+                </p>
               )}
             </div>
           </div>
         </div>
 
         {/* Items Table */}
-        <div className="mb-8">
-          <table className="w-full border-collapse">
+        <div className="mb-6">
+          <table className="w-full border-collapse border-4 border-black">
             <thead>
-              <tr className="bg-gray-50">
-                <th className="border border-gray-300 px-4 py-3 text-left font-semibold">Description</th>
-                <th className="border border-gray-300 px-4 py-3 text-center font-semibold">Qty</th>
-                <th className="border border-gray-300 px-4 py-3 text-right font-semibold">Unit Price</th>
-                <th className="border border-gray-300 px-4 py-3 text-right font-semibold">Total</th>
+              <tr className="bg-black text-white">
+                <th
+                  className="border-2 border-black px-3 py-3 text-left font-black"
+                  style={{ fontSize: "14px", fontWeight: "900" }}
+                >
+                  DESCRIPTION
+                </th>
+                <th
+                  className="border-2 border-black px-3 py-3 text-center font-black"
+                  style={{ fontSize: "14px", fontWeight: "900", width: "80px" }}
+                >
+                  QTY
+                </th>
+                <th
+                  className="border-2 border-black px-3 py-3 text-right font-black"
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: "900",
+                    width: "100px",
+                  }}
+                >
+                  UNIT PRICE
+                </th>
+                <th
+                  className="border-2 border-black px-3 py-3 text-right font-black"
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: "900",
+                    width: "100px",
+                  }}
+                >
+                  TOTAL
+                </th>
               </tr>
             </thead>
             <tbody>
               {invoice.items.map((item, index) => (
-                <tr key={item.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                  <td className="border border-gray-300 px-4 py-3">{item.description}</td>
-                  <td className="border border-gray-300 px-4 py-3 text-center">{item.quantity}</td>
-                  <td className="border border-gray-300 px-4 py-3 text-right">{formatCurrency(item.unitPrice)}</td>
-                  <td className="border border-gray-300 px-4 py-3 text-right font-medium">{formatCurrency(item.totalPrice)}</td>
+                <tr
+                  key={item.id}
+                  className={`border-2 border-black ${
+                    index % 2 === 0 ? "bg-white" : "bg-gray-100"
+                  }`}
+                >
+                  <td
+                    className="border-2 border-black px-3 py-3 font-semibold"
+                    style={{ fontSize: "13px", fontWeight: "600" }}
+                  >
+                    {item.description}
+                  </td>
+                  <td
+                    className="border-2 border-black px-3 py-3 text-center font-bold"
+                    style={{ fontSize: "14px", fontWeight: "700" }}
+                  >
+                    {item.quantity}
+                  </td>
+                  <td
+                    className="border-2 border-black px-3 py-3 text-right font-bold"
+                    style={{ fontSize: "13px", fontWeight: "700" }}
+                  >
+                    {formatCurrency(item.unitPrice)}
+                  </td>
+                  <td
+                    className="border-2 border-black px-3 py-3 text-right font-black"
+                    style={{ fontSize: "14px", fontWeight: "900" }}
+                  >
+                    {formatCurrency(item.totalPrice)}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -84,12 +227,22 @@ export const InvoicePrint = forwardRef<HTMLDivElement, InvoicePrintProps>(
         </div>
 
         {/* Total Section */}
-        <div className="flex justify-end mb-8">
-          <div className="w-64">
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="flex justify-between items-center text-xl font-bold text-gray-800">
-                <span>TOTAL:</span>
-                <span className="text-blue-600">{formatCurrency(invoice.total)}</span>
+        <div className="flex justify-end mb-6">
+          <div className="w-80">
+            <div className="bg-black text-white p-4 border-4 border-black">
+              <div className="flex justify-between items-center">
+                <span
+                  className="text-2xl font-black"
+                  style={{ fontSize: "24px", fontWeight: "900" }}
+                >
+                  TOTAL:
+                </span>
+                <span
+                  className="text-3xl font-black"
+                  style={{ fontSize: "28px", fontWeight: "900" }}
+                >
+                  {formatCurrency(invoice.total)}
+                </span>
               </div>
             </div>
           </div>
@@ -97,20 +250,74 @@ export const InvoicePrint = forwardRef<HTMLDivElement, InvoicePrintProps>(
 
         {/* Notes */}
         {invoice.notes && (
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-800 mb-3">Notes:</h3>
-            <p className="text-gray-700 bg-gray-50 p-4 rounded">{invoice.notes}</p>
+          <div className="mb-6">
+            <h3
+              className="text-lg font-black mb-3 border-b-2 border-black pb-1"
+              style={{ fontSize: "16px", fontWeight: "900" }}
+            >
+              NOTES:
+            </h3>
+            <div className="border-2 border-black p-4 bg-gray-50">
+              <p
+                className="font-semibold"
+                style={{
+                  fontSize: "13px",
+                  fontWeight: "600",
+                  lineHeight: "1.5",
+                }}
+              >
+                {invoice.notes}
+              </p>
+            </div>
           </div>
         )}
 
         {/* Footer */}
-        <div className="border-t-2 border-gray-300 pt-6 text-center text-gray-600">
-          <p className="mb-2">Thank you for your business!</p>
-          <p className="text-sm">For any questions about this invoice, please contact us.</p>
+        <div className="border-t-4 border-black pt-4 mt-auto">
+          <div className="text-center mb-4">
+            <p
+              className="text-2xl font-black mb-2"
+              style={{ fontSize: "20px", fontWeight: "900" }}
+            >
+              Thank you for your business!
+            </p>
+          </div>
+
+          <div className="bg-black text-white p-4 text-center">
+            <div className="grid grid-cols-1 gap-2">
+              <div className="flex justify-center items-center space-x-6 mb-2">
+                <span
+                  className="font-bold border-2 border-white px-3 py-1 rounded"
+                  style={{ fontSize: "14px", fontWeight: "700" }}
+                >
+                  MOMO CODE: 7722991
+                </span>
+                <span
+                  className="font-bold border-2 border-white px-3 py-1 rounded"
+                  style={{ fontSize: "14px", fontWeight: "700" }}
+                >
+                  Tel: 0783500312
+                </span>
+              </div>
+              <p
+                className="font-bold"
+                style={{ fontSize: "13px", fontWeight: "700" }}
+              >
+                Visit www.centurycleaningagency.com to view our cleaning
+                services and get quote
+              </p>
+              <p
+                className="font-semibold text-sm mt-2"
+                style={{ fontSize: "12px", fontWeight: "600" }}
+              >
+                For any questions about this invoice, please contact us.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
-    )
+    );
   }
-)
+);
 
-InvoicePrint.displayName = 'InvoicePrint'
+InvoicePrint.displayName = "InvoicePrint";

@@ -73,22 +73,25 @@
   body * {
     visibility: hidden;
   }
-  
+
   .print-content,
   .print-content * {
     visibility: visible;
   }
-  
+
   .print-content {
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
+    color: #000;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
-  
+
   @page {
     margin: 0.5in;
-    size: A4;
+    size: A4 portrait;
   }
 }
 
@@ -98,11 +101,11 @@
     padding-left: 1rem;
     padding-right: 1rem;
   }
-  
+
   table {
     font-size: 0.875rem;
   }
-  
+
   .grid {
     gap: 1rem;
   }
@@ -270,7 +273,7 @@
   .md\:grid-cols-3 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
-  
+
   .md\:grid-cols-4 {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
@@ -280,7 +283,7 @@
   .lg\:grid-cols-4 {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
-  
+
   .lg\:grid-cols-5 {
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
@@ -291,7 +294,7 @@
   .card {
     border-width: 2px;
   }
-  
+
   .btn {
     border-width: 2px;
     border-style: solid;

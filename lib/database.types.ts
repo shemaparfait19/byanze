@@ -112,6 +112,8 @@ export interface Database {
           pickup_date: string | null;
           pickup_time: string | null;
           notes: string | null;
+          created_by_name: string | null;
+          created_by_phone: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -124,6 +126,8 @@ export interface Database {
           pickup_date?: string | null;
           pickup_time?: string | null;
           notes?: string | null;
+          created_by_name?: string | null;
+          created_by_phone?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -136,6 +140,8 @@ export interface Database {
           pickup_date?: string | null;
           pickup_time?: string | null;
           notes?: string | null;
+          created_by_name?: string | null;
+          created_by_phone?: string | null;
           created_at?: string;
           updated_at?: string;
         };

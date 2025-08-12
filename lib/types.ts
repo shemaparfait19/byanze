@@ -7,6 +7,7 @@ export interface Client {
   rewardClaimed: boolean;
   lastVisit: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface InvoiceItem {
@@ -27,6 +28,8 @@ export interface Invoice {
   pickupDate?: string;
   pickupTime?: string;
   notes?: string;
+  createdByName?: string;
+  createdByPhone?: string;
   createdAt: string;
   updatedAt: string;
 }

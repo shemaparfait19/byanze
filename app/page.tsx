@@ -33,6 +33,13 @@ import { InvoiceDashboardCard } from "@/components/invoice-dashboard-card";
 import { InvoiceStatusManager } from "@/components/invoice-status-manager";
 import { InvoicePrint } from "@/components/invoice-print";
 import { Invoice } from "@/types";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { LogOut, User as UserIcon } from "lucide-react";
 import { AdvancedReports } from "@/components/advanced-reports";
 
 type View =
@@ -57,7 +64,9 @@ export default function HomePage() {
     databaseReady,
     getPickupNotifications,
     currentUserPhone,
+    currentUserName,
     setCurrentUser,
+    signOut,
   } = useSupabaseStore();
   const [phoneInput, setPhoneInput] = useState("");
 
@@ -402,7 +411,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold">Century Dry Cleaner</h1>
-            <div className="flex space-x-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               <Button
                 variant={currentView === "dashboard" ? "default" : "ghost"}
                 onClick={() => setCurrentView("dashboard")}
@@ -438,6 +447,24 @@ export default function HomePage() {
               >
                 Setup
               </Button>
+              {currentUserPhone && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="ml-2">
+                      <UserIcon className="h-4 w-4 mr-2" />
+                      <span className="hidden sm:inline">
+                        {currentUserName || currentUserPhone}
+                      </span>
+                      <span className="sm:hidden">Account</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => signOut()}>
+                      <LogOut className="h-4 w-4 mr-2" /> Sign out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           </div>
         </div>
