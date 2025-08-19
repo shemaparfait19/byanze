@@ -29,7 +29,7 @@ export const InvoicePrint = forwardRef<HTMLDivElement, InvoicePrintProps>(
                 src="/placeholder-logo.png"
                 alt="Company Logo"
                 className="mb-2"
-                style={{ height: "48px", width: "auto" }}
+                style={{ height: "80px", width: "auto" }}
               />
               <h1
                 className="text-4xl font-black tracking-wider mb-2"
