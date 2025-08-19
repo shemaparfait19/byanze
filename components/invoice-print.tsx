@@ -25,6 +25,12 @@ export const InvoicePrint = forwardRef<HTMLDivElement, InvoicePrintProps>(
         <div className="border-b-4 border-black pb-4 mb-6">
           <div className="flex justify-between items-start">
             <div>
+              <img
+                src="/placeholder-logo.png"
+                alt="Company Logo"
+                className="mb-2"
+                style={{ height: "48px", width: "auto" }}
+              />
               <h1
                 className="text-4xl font-black tracking-wider mb-2"
                 style={{ fontSize: "32px", fontWeight: "900" }}
