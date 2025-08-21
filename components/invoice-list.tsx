@@ -56,7 +56,13 @@ export function InvoiceList({ onEdit }: InvoiceListProps) {
   const [deleteInvoiceId, setDeleteInvoiceId] = useState<string | null>(null);
   const [viewInvoice, setViewInvoice] = useState<Invoice | null>(null);
 
-  const { invoices, deleteInvoice, loading } = useSupabaseStore();
+  const {
+    invoices,
+    deleteInvoice,
+    loading,
+    updateInvoicePaid,
+    updateInvoicePaymentMethod,
+  } = useSupabaseStore();
 
   const filteredInvoices = invoices.filter((invoice) => {
     const matchesSearch =
@@ -210,7 +216,43 @@ export function InvoiceList({ onEdit }: InvoiceListProps) {
                           {invoice.status}
                         </Badge>
                       </td>
-                      <td className="p-4">{invoice.paymentMethod}</td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-2">
+                          <Select
+                            value={invoice.paymentMethod}
+                            onValueChange={(val) =>
+                              updateInvoicePaymentMethod(invoice.id, val)
+                            }
+                          >
+                            <SelectTrigger className="w-36 h-8">
+                              <SelectValue placeholder="Method" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="UNPAID">
+                                Unpaid / On Account
+                              </SelectItem>
+                              <SelectItem value="CASH">Cash</SelectItem>
+                              <SelectItem value="MOMO">Mobile Money</SelectItem>
+                              <SelectItem value="BANK">
+                                Bank Transfer
+                              </SelectItem>
+                              <SelectItem value="CARD">Card Payment</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <button
+                            className={`text-xs px-2 py-1 rounded border ${
+                              invoice.paid
+                                ? "border-green-300 text-green-700"
+                                : "border-yellow-300 text-yellow-700"
+                            }`}
+                            onClick={() =>
+                              updateInvoicePaid(invoice.id, !invoice.paid)
+                            }
+                          >
+                            {invoice.paid ? "Paid" : "Unpaid"}
+                          </button>
+                        </div>
+                      </td>
                       <td className="p-4 text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
