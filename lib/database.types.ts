@@ -114,6 +114,7 @@ export interface Database {
           notes: string | null;
           created_by_name: string | null;
           created_by_phone: string | null;
+          paid: boolean | null;
           created_at: string;
           updated_at: string;
         };
@@ -128,6 +129,7 @@ export interface Database {
           notes?: string | null;
           created_by_name?: string | null;
           created_by_phone?: string | null;
+          paid?: boolean | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -142,6 +144,7 @@ export interface Database {
           notes?: string | null;
           created_by_name?: string | null;
           created_by_phone?: string | null;
+          paid?: boolean | null;
           created_at?: string;
           updated_at?: string;
         };

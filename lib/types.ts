@@ -24,6 +24,7 @@ export interface Invoice {
   items: InvoiceItem[];
   total: number;
   paymentMethod: string;
+  paid?: boolean;
   status: "pending" | "completed" | "cancelled";
   pickupDate?: string;
   pickupTime?: string;

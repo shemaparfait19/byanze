@@ -470,6 +470,13 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
                 </SelectContent>
               </Select>
 
+              {/* Auto-suggest paid flag based on payment method */}
+              {form.watch("paymentMethod") === "UNPAID" && (
+                <p className="text-xs text-yellow-700 mt-1">
+                  This invoice will be marked as unpaid.
+                </p>
+              )}
+
               {form.formState.errors.paymentMethod && (
                 <p className="text-sm text-red-500">
                   {form.formState.errors.paymentMethod.message}
