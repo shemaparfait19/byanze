@@ -54,6 +54,7 @@ interface SupabaseStore {
     status: "pending" | "completed" | "cancelled"
   ) => Promise<void>;
   updateInvoicePaid: (id: string, paid: boolean) => Promise<void>;
+  updateInvoicePaymentMethod: (id: string, method: string) => Promise<void>;
 }
 
 export const useSupabaseStore = create<SupabaseStore>((set, get) => ({
@@ -961,6 +962,43 @@ export const useSupabaseStore = create<SupabaseStore>((set, get) => ({
       set({ loading: false, error: error.message });
       toast({
         title: "Error updating paid flag",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  },
+
+  updateInvoicePaymentMethod: async (id, method) => {
+    try {
+      set({ loading: true, error: null });
+      const { error } = await supabase
+        .from("invoices")
+        .update({
+          payment_method: method,
+          paid: method !== "UNPAID",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", id);
+      if (error)
+        throw new Error(`Failed to update payment method: ${error.message}`);
+      set((state) => ({
+        invoices: state.invoices.map((inv) =>
+          inv.id === id
+            ? {
+                ...inv,
+                paymentMethod: method,
+                paid: method !== "UNPAID",
+                updatedAt: new Date().toISOString(),
+              }
+            : inv
+        ),
+        loading: false,
+      }));
+      toast({ title: "Payment method updated" });
+    } catch (error: any) {
+      set({ loading: false, error: error.message });
+      toast({
+        title: "Error updating payment method",
         description: error.message,
         variant: "destructive",
       });

@@ -47,7 +47,12 @@ export function InvoiceStatusManager({
   const [newStatus, setNewStatus] = useState<
     "pending" | "completed" | "cancelled" | null
   >(null);
-  const { updateInvoiceStatus, loading } = useSupabaseStore();
+  const {
+    updateInvoiceStatus,
+    updateInvoicePaid,
+    updateInvoicePaymentMethod,
+    loading,
+  } = useSupabaseStore();
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -252,6 +257,47 @@ export function InvoiceStatusManager({
                 Mark Cancelled
               </Button>
             )}
+          </div>
+        </div>
+
+        <div className="space-y-2 pt-2 border-t">
+          <h4 className="font-medium">Payment:</h4>
+          <div className="flex gap-2 flex-wrap items-center">
+            <Badge
+              className={
+                invoice.paid
+                  ? "bg-green-100 text-green-800"
+                  : "bg-yellow-100 text-yellow-800"
+              }
+            >
+              {invoice.paid ? "PAID" : "UNPAID"}
+            </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => updateInvoicePaid(invoice.id, !invoice.paid)}
+              disabled={loading}
+            >
+              Mark {invoice.paid ? "Unpaid" : "Paid"}
+            </Button>
+            <Select
+              value={invoice.paymentMethod}
+              onValueChange={(value) =>
+                updateInvoicePaymentMethod(invoice.id, value)
+              }
+              disabled={loading}
+            >
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Payment Method" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="UNPAID">Unpaid / On Account</SelectItem>
+                <SelectItem value="CASH">Cash</SelectItem>
+                <SelectItem value="MOMO">Mobile Money</SelectItem>
+                <SelectItem value="BANK">Bank Transfer</SelectItem>
+                <SelectItem value="CARD">Card Payment</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
