@@ -69,6 +69,7 @@ export default function HomePage() {
     signOut,
   } = useSupabaseStore();
   const [phoneInput, setPhoneInput] = useState("");
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   useEffect(() => {
     initializeDatabase();
@@ -178,10 +179,21 @@ export default function HomePage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <Input
-              placeholder="+2507XXXXXXXX"
+              placeholder="Enter your code"
+              type={isPasswordVisible ? "text" : "password"}
               value={phoneInput}
               onChange={(e) => setPhoneInput(e.target.value)}
             />
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <button
+                type="button"
+                onClick={() => setIsPasswordVisible((v) => !v)}
+                className="underline"
+              >
+                {isPasswordVisible ? "Hide" : "Show"}
+              </button>
+              <span>Use your phone number as code</span>
+            </div>
             <Button
               className="w-full"
               onClick={() => setCurrentUser(phoneInput)}

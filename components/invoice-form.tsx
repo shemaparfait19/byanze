@@ -1,179 +1,209 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { useForm, useFieldArray } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Trash2, Search } from 'lucide-react'
-import { useSupabaseStore } from '@/lib/supabase-store'
-import { formatCurrency, generateInvoiceId } from '@/lib/utils'
-import { toast } from '@/hooks/use-toast'
-import type { Client, Invoice, InvoiceItem } from '@/lib/types'
+import { useState, useEffect } from "react";
+import { useForm, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Plus, Trash2, Search } from "lucide-react";
+import { useSupabaseStore } from "@/lib/supabase-store";
+import { formatCurrency, generateInvoiceId } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast";
+import type { Client, Invoice, InvoiceItem } from "@/lib/types";
 
-const phoneSchema = z.string()
-  .min(1, 'Phone number is required')
-  .regex(/^\+250\d{9}$/, 'Phone must be in format +250XXXXXXXXX')
+const phoneSchema = z
+  .string()
+  .min(1, "Phone number is required")
+  .regex(
+    /^\+?[1-9]\d{7,14}$/,
+    "Phone must be international format, e.g. +14155552671"
+  );
 
 const invoiceSchema = z.object({
-  clientName: z.string().min(1, 'Client name is required'),
+  clientName: z.string().min(1, "Client name is required"),
   clientPhone: phoneSchema,
   clientAddress: z.string().optional(),
-  items: z.array(z.object({
-    description: z.string().min(1, 'Description is required'),
-    quantity: z.number().min(1, 'Quantity must be at least 1'),
-    unitPrice: z.number().min(0, 'Unit price must be positive'),
-  })).min(1, 'At least one item is required'),
-  paymentMethod: z.string().min(1, 'Payment method is required'),
+  items: z
+    .array(
+      z.object({
+        description: z.string().min(1, "Description is required"),
+        quantity: z.number().min(1, "Quantity must be at least 1"),
+        unitPrice: z.number().min(0, "Unit price must be positive"),
+      })
+    )
+    .min(1, "At least one item is required"),
+  paymentMethod: z.string().min(1, "Payment method is required"),
   pickupDate: z.string().optional(),
   pickupTime: z.string().optional(),
   notes: z.string().optional(),
-  status: z.enum(['pending', 'completed', 'cancelled']),
-})
+  status: z.enum(["pending", "completed", "cancelled"]),
+});
 
-type InvoiceFormData = z.infer<typeof invoiceSchema>
+type InvoiceFormData = z.infer<typeof invoiceSchema>;
 
 interface InvoiceFormProps {
-  editingId?: string | null
-  onSave: () => void
-  onCancel: () => void
+  editingId?: string | null;
+  onSave: () => void;
+  onCancel: () => void;
 }
 
 export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [showClientSearch, setShowClientSearch] = useState(false)
-  const { invoices, clients, addInvoice, updateInvoice, addClient, loading } = useSupabaseStore()
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showClientSearch, setShowClientSearch] = useState(false);
+  const { invoices, clients, addInvoice, updateInvoice, addClient, loading } =
+    useSupabaseStore();
 
-  const editingInvoice = editingId ? invoices.find(inv => inv.id === editingId) : null
+  const editingInvoice = editingId
+    ? invoices.find((inv) => inv.id === editingId)
+    : null;
 
   const form = useForm<InvoiceFormData>({
     resolver: zodResolver(invoiceSchema),
     defaultValues: {
-      clientName: '',
-      clientPhone: '+250',
-      clientAddress: '',
-      items: [{ description: '', quantity: 1, unitPrice: 0 }],
-      paymentMethod: '',
-      pickupDate: '',
-      pickupTime: '',
-      notes: '',
-      status: 'pending',
+      clientName: "",
+      clientPhone: "",
+      clientAddress: "",
+      items: [{ description: "", quantity: 1, unitPrice: 0 }],
+      paymentMethod: "",
+      pickupDate: "",
+      pickupTime: "",
+      notes: "",
+      status: "pending",
     },
-    mode: 'onChange', // Add this for better validation feedback
-  })
+    mode: "onChange", // Add this for better validation feedback
+  });
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: 'items',
-  })
+    name: "items",
+  });
 
   useEffect(() => {
     if (editingInvoice) {
       form.reset({
         clientName: editingInvoice.client.name,
         clientPhone: editingInvoice.client.phone,
-        clientAddress: editingInvoice.client.address || '',
+        clientAddress: editingInvoice.client.address || "",
         items: editingInvoice.items,
         paymentMethod: editingInvoice.paymentMethod,
-        pickupDate: editingInvoice.pickupDate || '',
-        pickupTime: editingInvoice.pickupTime || '',
-        notes: editingInvoice.notes || '',
+        pickupDate: editingInvoice.pickupDate || "",
+        pickupTime: editingInvoice.pickupTime || "",
+        notes: editingInvoice.notes || "",
         status: editingInvoice.status,
-      })
+      });
     }
-  }, [editingInvoice, form])
+  }, [editingInvoice, form]);
 
-  const filteredClients = clients.filter(client =>
-    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.phone.includes(searchTerm)
-  )
+  const filteredClients = clients.filter(
+    (client) =>
+      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.phone.includes(searchTerm)
+  );
 
   const selectClient = (client: Client) => {
-    form.setValue('clientName', client.name)
-    form.setValue('clientPhone', client.phone)
-    form.setValue('clientAddress', client.address || '')
-    setShowClientSearch(false)
-    setSearchTerm('')
-  }
+    form.setValue("clientName", client.name);
+    form.setValue("clientPhone", client.phone);
+    form.setValue("clientAddress", client.address || "");
+    setShowClientSearch(false);
+    setSearchTerm("");
+  };
 
   const calculateTotal = () => {
-    const items = form.watch('items')
-    return items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0)
-  }
+    const items = form.watch("items");
+    return items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+  };
 
   const onSubmit = async (data: InvoiceFormData) => {
     try {
-      console.log('Form submission started with data:', data)
-      
+      console.log("Form submission started with data:", data);
+
       // Validate required fields
       if (!data.clientName.trim()) {
-        toast({ title: 'Client name is required', variant: 'destructive' })
-        return
+        toast({ title: "Client name is required", variant: "destructive" });
+        return;
       }
-      
+
       if (!data.clientPhone.trim()) {
-        toast({ title: 'Client phone is required', variant: 'destructive' })
-        return
+        toast({ title: "Client phone is required", variant: "destructive" });
+        return;
       }
-      
+
       if (!data.paymentMethod) {
-        toast({ title: 'Payment method is required', variant: 'destructive' })
-        return
+        toast({ title: "Payment method is required", variant: "destructive" });
+        return;
       }
-      
+
       if (data.items.length === 0) {
-        toast({ title: 'At least one item is required', variant: 'destructive' })
-        return
+        toast({
+          title: "At least one item is required",
+          variant: "destructive",
+        });
+        return;
       }
-      
+
       // Validate items
       for (let i = 0; i < data.items.length; i++) {
-        const item = data.items[i]
+        const item = data.items[i];
         if (!item.description.trim()) {
-          toast({ title: `Item ${i + 1} description is required`, variant: 'destructive' })
-          return
+          toast({
+            title: `Item ${i + 1} description is required`,
+            variant: "destructive",
+          });
+          return;
         }
         if (item.quantity <= 0) {
-          toast({ title: `Item ${i + 1} quantity must be greater than 0`, variant: 'destructive' })
-          return
+          toast({
+            title: `Item ${i + 1} quantity must be greater than 0`,
+            variant: "destructive",
+          });
+          return;
         }
         if (item.unitPrice < 0) {
-          toast({ title: `Item ${i + 1} unit price cannot be negative`, variant: 'destructive' })
-          return
+          toast({
+            title: `Item ${i + 1} unit price cannot be negative`,
+            variant: "destructive",
+          });
+          return;
         }
       }
 
       // Find or create client
-      let client = clients.find(c => c.phone === data.clientPhone)
+      let client = clients.find((c) => c.phone === data.clientPhone);
       if (!client) {
-        console.log('Creating new client...')
+        console.log("Creating new client...");
         const newClient = await addClient({
           name: data.clientName,
           phone: data.clientPhone,
-          address: data.clientAddress || '',
+          address: data.clientAddress || "",
           visitCount: 0,
           rewardClaimed: false,
           lastVisit: new Date().toISOString(),
-        })
+        });
         if (!newClient) {
-          toast({ title: 'Failed to create client', variant: 'destructive' })
-          return
+          toast({ title: "Failed to create client", variant: "destructive" });
+          return;
         }
-        client = newClient
+        client = newClient;
       }
 
-      const total = calculateTotal()
-      console.log('Calculated total:', total)
+      const total = calculateTotal();
+      console.log("Calculated total:", total);
 
-      const invoiceData: Omit<Invoice, 'createdAt' | 'updatedAt'> = {
+      const invoiceData: Omit<Invoice, "createdAt" | "updatedAt"> = {
         id: editingId || generateInvoiceId(),
         client,
-        items: data.items.map(item => ({
+        items: data.items.map((item) => ({
           id: crypto.randomUUID(),
           ...item,
           totalPrice: item.quantity * item.unitPrice,
@@ -184,48 +214,48 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
         pickupDate: data.pickupDate || undefined,
         pickupTime: data.pickupTime || undefined,
         notes: data.notes || undefined,
-      }
+      };
 
-      console.log('Invoice data prepared:', invoiceData)
+      console.log("Invoice data prepared:", invoiceData);
 
       if (editingId) {
-        console.log('Updating existing invoice...')
-        await updateInvoice(editingId, invoiceData)
-        toast({ title: 'Invoice updated successfully!' })
+        console.log("Updating existing invoice...");
+        await updateInvoice(editingId, invoiceData);
+        toast({ title: "Invoice updated successfully!" });
       } else {
-        console.log('Creating new invoice...')
-        await addInvoice(invoiceData)
-        toast({ title: 'Invoice created successfully!' })
+        console.log("Creating new invoice...");
+        await addInvoice(invoiceData);
+        toast({ title: "Invoice created successfully!" });
       }
 
-      console.log('Invoice operation completed, calling onSave...')
-      onSave()
+      console.log("Invoice operation completed, calling onSave...");
+      onSave();
     } catch (error: any) {
-      console.error('Error in form submission:', error)
-      toast({ 
-        title: 'Error saving invoice', 
-        description: error.message || 'Please try again.',
-        variant: 'destructive' 
-      })
+      console.error("Error in form submission:", error);
+      toast({
+        title: "Error saving invoice",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
     }
-  }
+  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">
-          {editingId ? 'Edit Invoice' : 'Create New Invoice'}
+          {editingId ? "Edit Invoice" : "Create New Invoice"}
         </h1>
         <div className="space-x-2">
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             disabled={loading}
             onClick={form.handleSubmit(onSubmit)}
           >
-            {loading ? 'Saving...' : editingId ? 'Update' : 'Create'} Invoice
+            {loading ? "Saving..." : editingId ? "Update" : "Create"} Invoice
           </Button>
         </div>
       </div>
@@ -241,7 +271,7 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
               <div className="flex gap-2">
                 <Input
                   id="clientName"
-                  {...form.register('clientName')}
+                  {...form.register("clientName")}
                   placeholder="Enter client name"
                 />
                 <Button
@@ -253,7 +283,9 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
                 </Button>
               </div>
               {form.formState.errors.clientName && (
-                <p className="text-sm text-red-500">{form.formState.errors.clientName.message}</p>
+                <p className="text-sm text-red-500">
+                  {form.formState.errors.clientName.message}
+                </p>
               )}
 
               {showClientSearch && (
@@ -273,7 +305,9 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
                           onClick={() => selectClient(client)}
                         >
                           <p className="font-medium">{client.name}</p>
-                          <p className="text-sm text-muted-foreground">{client.phone}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {client.phone}
+                          </p>
                         </div>
                       ))}
                     </div>
@@ -286,11 +320,13 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
               <Label htmlFor="clientPhone">Phone Number</Label>
               <Input
                 id="clientPhone"
-                {...form.register('clientPhone')}
+                {...form.register("clientPhone")}
                 placeholder="+250XXXXXXXXX"
               />
               {form.formState.errors.clientPhone && (
-                <p className="text-sm text-red-500">{form.formState.errors.clientPhone.message}</p>
+                <p className="text-sm text-red-500">
+                  {form.formState.errors.clientPhone.message}
+                </p>
               )}
             </div>
 
@@ -298,7 +334,7 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
               <Label htmlFor="clientAddress">Address (Optional)</Label>
               <Textarea
                 id="clientAddress"
-                {...form.register('clientAddress')}
+                {...form.register("clientAddress")}
                 placeholder="Enter client address"
               />
             </div>
@@ -311,7 +347,9 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
               <CardTitle>Invoice Items</CardTitle>
               <Button
                 type="button"
-                onClick={() => append({ description: '', quantity: 1, unitPrice: 0 })}
+                onClick={() =>
+                  append({ description: "", quantity: 1, unitPrice: 0 })
+                }
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Item
@@ -320,7 +358,10 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             {fields.map((field, index) => (
-              <div key={field.id} className="grid grid-cols-1 md:grid-cols-5 gap-4 p-4 border rounded">
+              <div
+                key={field.id}
+                className="grid grid-cols-1 md:grid-cols-5 gap-4 p-4 border rounded"
+              >
                 <div className="md:col-span-2">
                   <Label>Description</Label>
                   <Input
@@ -332,7 +373,9 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
                   <Label>Quantity</Label>
                   <Input
                     type="number"
-                    {...form.register(`items.${index}.quantity`, { valueAsNumber: true })}
+                    {...form.register(`items.${index}.quantity`, {
+                      valueAsNumber: true,
+                    })}
                     min="1"
                   />
                 </div>
@@ -340,7 +383,9 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
                   <Label>Unit Price (RWF)</Label>
                   <Input
                     type="number"
-                    {...form.register(`items.${index}.unitPrice`, { valueAsNumber: true })}
+                    {...form.register(`items.${index}.unitPrice`, {
+                      valueAsNumber: true,
+                    })}
                     min="0"
                     step="0.01"
                   />
@@ -374,14 +419,15 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
           <CardContent className="space-y-4">
             <div>
               <Label htmlFor="paymentMethod">Payment Method</Label>
-              <Select 
-                value={form.watch('paymentMethod')} 
-                onValueChange={(value) => form.setValue('paymentMethod', value)}
+              <Select
+                value={form.watch("paymentMethod")}
+                onValueChange={(value) => form.setValue("paymentMethod", value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select payment method" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="UNPAID">Unpaid / On Account</SelectItem>
                   <SelectItem value="CASH">Cash</SelectItem>
                   <SelectItem value="MOMO">Mobile Money</SelectItem>
                   <SelectItem value="BANK">Bank Transfer</SelectItem>
@@ -390,7 +436,9 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
               </Select>
 
               {form.formState.errors.paymentMethod && (
-                <p className="text-sm text-red-500">{form.formState.errors.paymentMethod.message}</p>
+                <p className="text-sm text-red-500">
+                  {form.formState.errors.paymentMethod.message}
+                </p>
               )}
             </div>
 
@@ -400,7 +448,7 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
                 <Input
                   id="pickupDate"
                   type="date"
-                  {...form.register('pickupDate')}
+                  {...form.register("pickupDate")}
                 />
               </div>
               <div>
@@ -408,16 +456,16 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
                 <Input
                   id="pickupTime"
                   type="time"
-                  {...form.register('pickupTime')}
+                  {...form.register("pickupTime")}
                 />
               </div>
             </div>
 
             <div>
               <Label htmlFor="status">Status</Label>
-              <Select 
-                value={form.watch('status')} 
-                onValueChange={(value) => form.setValue('status', value as any)}
+              <Select
+                value={form.watch("status")}
+                onValueChange={(value) => form.setValue("status", value as any)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />
@@ -430,7 +478,9 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
               </Select>
 
               {form.formState.errors.status && (
-                <p className="text-sm text-red-500">{form.formState.errors.status.message}</p>
+                <p className="text-sm text-red-500">
+                  {form.formState.errors.status.message}
+                </p>
               )}
             </div>
 
@@ -438,7 +488,7 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
               <Label htmlFor="notes">Notes (Optional)</Label>
               <Textarea
                 id="notes"
-                {...form.register('notes')}
+                {...form.register("notes")}
                 placeholder="Additional notes or instructions"
               />
             </div>
@@ -446,5 +496,5 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
         </Card>
       </form>
     </div>
-  )
+  );
 }
