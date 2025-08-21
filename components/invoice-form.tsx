@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Trash2, Search } from "lucide-react";
+import { SERVICES } from "@/lib/services";
 import { useSupabaseStore } from "@/lib/supabase-store";
 import { formatCurrency, generateInvoiceId } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
@@ -364,10 +365,44 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
               >
                 <div className="md:col-span-2">
                   <Label>Description</Label>
-                  <Input
-                    {...form.register(`items.${index}.description`)}
-                    placeholder="Item description"
-                  />
+                  <div className="relative">
+                    <Input
+                      {...form.register(`items.${index}.description`)}
+                      placeholder="Start typing a service..."
+                      onChange={(e) => {
+                        form.setValue(
+                          `items.${index}.description`,
+                          e.target.value
+                        );
+                      }}
+                    />
+                    {form.watch(`items.${index}.description`) && (
+                      <div className="absolute z-10 mt-1 w-full max-h-40 overflow-auto rounded border bg-white shadow">
+                        {SERVICES.filter((s) =>
+                          s
+                            .toLowerCase()
+                            .includes(
+                              (
+                                form.watch(`items.${index}.description`) || ""
+                              ).toLowerCase()
+                            )
+                        )
+                          .slice(0, 8)
+                          .map((s) => (
+                            <button
+                              type="button"
+                              key={s}
+                              className="w-full text-left px-3 py-2 hover:bg-muted"
+                              onClick={() =>
+                                form.setValue(`items.${index}.description`, s)
+                              }
+                            >
+                              {s}
+                            </button>
+                          ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <Label>Quantity</Label>
