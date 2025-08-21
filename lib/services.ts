@@ -50,7 +50,7 @@ export const SERVICES: string[] = [
   "Cap/Hat/Beanie Washing",
   "Belt Cleaning",
   "Sneakers Cleaning",
-  "Classic Shoes Cleaning",
+  "Shoes Cleaning",
   "Boots Cleaning",
   "Sandals Cleaning",
   "Slippers Cleaning",
