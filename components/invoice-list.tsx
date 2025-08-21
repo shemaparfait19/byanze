@@ -52,6 +52,7 @@ interface InvoiceListProps {
 export function InvoiceList({ onEdit }: InvoiceListProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [paidFilter, setPaidFilter] = useState<string>("all");
   const [deleteInvoiceId, setDeleteInvoiceId] = useState<string | null>(null);
   const [viewInvoice, setViewInvoice] = useState<Invoice | null>(null);
 
@@ -65,8 +66,11 @@ export function InvoiceList({ onEdit }: InvoiceListProps) {
 
     const matchesStatus =
       statusFilter === "all" || invoice.status === statusFilter;
+    const matchesPaid =
+      paidFilter === "all" ||
+      (paidFilter === "paid" ? invoice.paid : !invoice.paid);
 
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus && matchesPaid;
   });
 
   const handleDelete = async (invoiceId: string) => {
@@ -145,6 +149,16 @@ export function InvoiceList({ onEdit }: InvoiceListProps) {
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="completed">Completed</SelectItem>
               <SelectItem value="cancelled">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={paidFilter} onValueChange={setPaidFilter}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Filter by payment" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Payments</SelectItem>
+              <SelectItem value="paid">Paid</SelectItem>
+              <SelectItem value="unpaid">Unpaid</SelectItem>
             </SelectContent>
           </Select>
         </div>

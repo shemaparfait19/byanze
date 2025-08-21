@@ -53,6 +53,7 @@ interface SupabaseStore {
     id: string,
     status: "pending" | "completed" | "cancelled"
   ) => Promise<void>;
+  updateInvoicePaid: (id: string, paid: boolean) => Promise<void>;
 }
 
 export const useSupabaseStore = create<SupabaseStore>((set, get) => ({
@@ -931,6 +932,36 @@ export const useSupabaseStore = create<SupabaseStore>((set, get) => ({
       toast({
         title: "Error updating status",
         description: errorMessage,
+        variant: "destructive",
+      });
+    }
+  },
+
+  updateInvoicePaid: async (id, paid) => {
+    try {
+      set({ loading: true, error: null });
+      const { error } = await supabase
+        .from("invoices")
+        .update({ paid, updated_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) {
+        throw new Error(`Failed to update paid flag: ${error.message}`);
+      }
+      set((state) => ({
+        invoices: state.invoices.map((inv) =>
+          inv.id === id
+            ? { ...inv, paid, updatedAt: new Date().toISOString() }
+            : inv
+        ),
+        loading: false,
+      }));
+      toast({ title: paid ? "Marked as PAID" : "Marked as UNPAID" });
+    } catch (error: any) {
+      console.error("Error updating paid flag:", error);
+      set({ loading: false, error: error.message });
+      toast({
+        title: "Error updating paid flag",
+        description: error.message,
         variant: "destructive",
       });
     }
