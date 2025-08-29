@@ -64,20 +64,25 @@ export function InvoiceList({ onEdit }: InvoiceListProps) {
     updateInvoicePaymentMethod,
   } = useSupabaseStore();
 
-  const filteredInvoices = invoices.filter((invoice) => {
-    const matchesSearch =
-      invoice.client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.client.phone.includes(searchTerm) ||
-      invoice.id.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredInvoices = invoices
+    .filter((invoice) => {
+      const matchesSearch =
+        invoice.client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        invoice.client.phone.includes(searchTerm) ||
+        invoice.id.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesStatus =
-      statusFilter === "all" || invoice.status === statusFilter;
-    const matchesPaid =
-      paidFilter === "all" ||
-      (paidFilter === "paid" ? invoice.paid : !invoice.paid);
+      const matchesStatus =
+        statusFilter === "all" || invoice.status === statusFilter;
+      const matchesPaid =
+        paidFilter === "all" ||
+        (paidFilter === "paid" ? invoice.paid : !invoice.paid);
 
-    return matchesSearch && matchesStatus && matchesPaid;
-  });
+      return matchesSearch && matchesStatus && matchesPaid;
+    })
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
 
   const handleDelete = async (invoiceId: string) => {
     try {

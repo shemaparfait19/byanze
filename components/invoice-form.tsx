@@ -207,6 +207,24 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
       const total = calculateTotal();
       console.log("Calculated total:", total);
 
+      // Build createdAt by combining selected date with current local time
+      const buildCreatedAt = (dateOnly: string) => {
+        const now = new Date();
+        const [y, m, d] = dateOnly.split("-").map((v) => parseInt(v, 10));
+        const local = new Date(
+          y,
+          (m || 1) - 1,
+          d || 1,
+          now.getHours(),
+          now.getMinutes(),
+          now.getSeconds(),
+          now.getMilliseconds()
+        );
+        return local.toISOString();
+      };
+
+      const createdAtIso = buildCreatedAt(data.createdDate);
+
       const invoiceData: Omit<Invoice, "createdAt" | "updatedAt"> = {
         id: editingId || generateInvoiceId(),
         client,
@@ -229,7 +247,7 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
         console.log("Updating existing invoice...");
         await updateInvoice(editingId, {
           ...invoiceData,
-          createdAt: new Date(data.createdDate).toISOString(),
+          createdAt: createdAtIso,
         });
         toast({ title: "Invoice updated successfully!" });
       } else {
@@ -237,7 +255,7 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
         await addInvoice({
           ...invoiceData,
           // Pass optional createdAt to override DB default when user customizes
-          createdAt: new Date(data.createdDate).toISOString(),
+          createdAt: createdAtIso,
         } as any);
         toast({ title: "Invoice created successfully!" });
       }
