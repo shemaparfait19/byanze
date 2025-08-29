@@ -32,7 +32,7 @@ interface SupabaseStore {
   // Invoice operations
   loadInvoices: () => Promise<void>;
   addInvoice: (
-    invoice: Omit<Invoice, "createdAt" | "updatedAt">
+    invoice: Omit<Invoice, "updatedAt"> & { createdAt?: string }
   ) => Promise<void>;
   updateInvoice: (id: string, invoice: Partial<Invoice>) => Promise<void>;
   deleteInvoice: (id: string) => Promise<void>;
@@ -575,6 +575,10 @@ export const useSupabaseStore = create<SupabaseStore>((set, get) => ({
           notes: invoiceData.notes || null,
           created_by_name: get().currentUserName || null,
           created_by_phone: get().currentUserPhone || null,
+          // Allow overriding created_at when provided
+          ...(invoiceData.createdAt
+            ? { created_at: invoiceData.createdAt }
+            : {}),
         })
         .select()
         .single();
@@ -682,6 +686,8 @@ export const useSupabaseStore = create<SupabaseStore>((set, get) => ({
       if (updates.pickupTime !== undefined)
         updateData.pickup_time = updates.pickupTime || null;
       if (updates.notes !== undefined) updateData.notes = updates.notes || null;
+      if ((updates as any).createdAt)
+        updateData.created_at = (updates as any).createdAt;
 
       const { error: invoiceError } = await supabase
         .from("invoices")

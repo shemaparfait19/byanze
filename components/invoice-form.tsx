@@ -45,6 +45,8 @@ const invoiceSchema = z.object({
     )
     .min(1, "At least one item is required"),
   paymentMethod: z.string().min(1, "Payment method is required"),
+  // Creation date, defaults to today but user can customize
+  createdDate: z.string().min(1, "Invoice date is required"),
   pickupDate: z.string().optional(),
   pickupTime: z.string().optional(),
   notes: z.string().optional(),
@@ -77,6 +79,7 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
       clientAddress: "",
       items: [{ description: "", quantity: 1, unitPrice: 0 }],
       paymentMethod: "",
+      createdDate: new Date().toISOString().slice(0, 10),
       pickupDate: "",
       pickupTime: "",
       notes: "",
@@ -98,6 +101,9 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
         clientAddress: editingInvoice.client.address || "",
         items: editingInvoice.items,
         paymentMethod: editingInvoice.paymentMethod,
+        createdDate: (
+          editingInvoice.createdAt || new Date().toISOString()
+        ).slice(0, 10),
         pickupDate: editingInvoice.pickupDate || "",
         pickupTime: editingInvoice.pickupTime || "",
         notes: editingInvoice.notes || "",
@@ -221,11 +227,18 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
 
       if (editingId) {
         console.log("Updating existing invoice...");
-        await updateInvoice(editingId, invoiceData);
+        await updateInvoice(editingId, {
+          ...invoiceData,
+          createdAt: new Date(data.createdDate).toISOString(),
+        });
         toast({ title: "Invoice updated successfully!" });
       } else {
         console.log("Creating new invoice...");
-        await addInvoice(invoiceData);
+        await addInvoice({
+          ...invoiceData,
+          // Pass optional createdAt to override DB default when user customizes
+          createdAt: new Date(data.createdDate).toISOString(),
+        } as any);
         toast({ title: "Invoice created successfully!" });
       }
 
@@ -452,6 +465,20 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
             <CardTitle>Payment & Delivery</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="createdDate">Invoice Date</Label>
+              <Input
+                id="createdDate"
+                type="date"
+                {...form.register("createdDate")}
+              />
+              {form.formState.errors.createdDate && (
+                <p className="text-sm text-red-500">
+                  {form.formState.errors.createdDate.message}
+                </p>
+              )}
+            </div>
+
             <div>
               <Label htmlFor="paymentMethod">Payment Method</Label>
               <Select
