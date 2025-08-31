@@ -56,6 +56,8 @@ export function InvoiceList({ onEdit }: InvoiceListProps) {
   const [paidFilter, setPaidFilter] = useState<string>("all");
   const [deleteInvoiceId, setDeleteInvoiceId] = useState<string | null>(null);
   const [viewInvoice, setViewInvoice] = useState<Invoice | null>(null);
+  const [notesInvoice, setNotesInvoice] = useState<Invoice | null>(null);
+  const [notesText, setNotesText] = useState("");
 
   const {
     invoices,
@@ -63,6 +65,7 @@ export function InvoiceList({ onEdit }: InvoiceListProps) {
     loading,
     updateInvoicePaid,
     updateInvoicePaymentMethod,
+    updateInvoice,
   } = useSupabaseStore();
 
   const filteredInvoices = invoices
@@ -119,6 +122,28 @@ export function InvoiceList({ onEdit }: InvoiceListProps) {
     } catch (error) {
       toast({
         title: "Error sharing invoice",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleOpenNotes = (invoice: Invoice) => {
+    setNotesInvoice(invoice);
+    setNotesText(invoice.notes || "");
+  };
+
+  const handleSaveNotes = async () => {
+    if (!notesInvoice) return;
+
+    try {
+      await updateInvoice(notesInvoice.id, { notes: notesText.trim() || null });
+      setNotesInvoice(null);
+      setNotesText("");
+      toast({ title: "Notes updated successfully!" });
+    } catch (error) {
+      toast({
+        title: "Error updating notes",
         description: "Please try again.",
         variant: "destructive",
       });
@@ -212,13 +237,22 @@ export function InvoiceList({ onEdit }: InvoiceListProps) {
                     Date: {new Date(invoice.createdAt).toLocaleDateString()}
                   </p>
                   <p>Created by: {invoice.createdByName || "-"}</p>
-                  {invoice.notes && (
-                    <div className="flex items-center gap-2 text-blue-600 mt-1">
-                      <StickyNote className="h-4 w-4" />
-                      <span className="text-sm font-medium">Has Notes</span>
-                    </div>
-                  )}
                 </div>
+
+                {/* Floating Notes Display */}
+                {invoice.notes && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 -mx-2">
+                    <div className="flex items-start gap-2">
+                      <StickyNote className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-blue-800 mb-1">
+                          Notes & Updates
+                        </p>
+                        <p className="text-sm text-blue-700">{invoice.notes}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex flex-wrap gap-2">
                   <Select
@@ -299,7 +333,7 @@ export function InvoiceList({ onEdit }: InvoiceListProps) {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setViewInvoice(invoice)}
+                    onClick={() => handleOpenNotes(invoice)}
                     className="flex-1 sm:flex-none"
                   >
                     <StickyNote className="h-4 w-4 mr-2" />
@@ -401,11 +435,21 @@ export function InvoiceList({ onEdit }: InvoiceListProps) {
                       </td>
                       <td className="p-4">
                         {invoice.notes && (
-                          <div className="flex items-center gap-2 text-blue-600">
-                            <StickyNote className="h-4 w-4" />
-                            <span className="text-sm font-medium">
-                              Has Notes
-                            </span>
+                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 max-w-xs">
+                            <div className="flex items-start gap-2">
+                              <StickyNote className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-blue-800 mb-1">
+                                  Notes
+                                </p>
+                                <p
+                                  className="text-xs text-blue-700 truncate"
+                                  title={invoice.notes}
+                                >
+                                  {invoice.notes}
+                                </p>
+                              </div>
+                            </div>
                           </div>
                         )}
                       </td>
@@ -442,7 +486,7 @@ export function InvoiceList({ onEdit }: InvoiceListProps) {
                               Share WhatsApp
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => setViewInvoice(invoice)}
+                              onClick={() => handleOpenNotes(invoice)}
                             >
                               <StickyNote className="h-4 w-4 mr-2" />
                               Notes
@@ -521,6 +565,55 @@ export function InvoiceList({ onEdit }: InvoiceListProps) {
             </div>
             <div className="p-4">
               <InvoicePrint invoice={viewInvoice} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notes Dialog */}
+      {notesInvoice && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-4 border-b">
+              <h2 className="text-lg font-semibold">Invoice Notes</h2>
+              <p className="text-sm text-muted-foreground">
+                Invoice #{notesInvoice.id} - {notesInvoice.client.name}
+              </p>
+            </div>
+            <div className="p-4">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Notes & Updates
+                  </label>
+                  <textarea
+                    value={notesText}
+                    onChange={(e) => setNotesText(e.target.value)}
+                    placeholder="Add notes like: Client didn't pay all money, delivery delayed, special instructions..."
+                    className="w-full p-3 border rounded-lg resize-none"
+                    rows={4}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Use this to track important updates, payment issues, or
+                    special instructions.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="p-4 border-t flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setNotesInvoice(null);
+                  setNotesText("");
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleSaveNotes} className="flex-1">
+                Save Notes
+              </Button>
             </div>
           </div>
         </div>

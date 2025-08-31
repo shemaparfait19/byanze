@@ -64,12 +64,6 @@ export function InvoiceDashboardCard({
             {invoice.client.name}
           </CardTitle>
           <div className="flex items-center gap-2">
-            {invoice.notes && (
-              <Badge className="bg-blue-100 text-blue-800 text-xs">
-                <StickyNote className="h-3 w-3 mr-1" />
-                Notes
-              </Badge>
-            )}
             {getStatusIcon(invoice.status)}
             {isPickupDue() && (
               <Badge className="bg-orange-100 text-orange-800 text-xs">
@@ -79,6 +73,23 @@ export function InvoiceDashboardCard({
           </div>
         </div>
       </CardHeader>
+
+      {/* Floating Notes Display */}
+      {invoice.notes && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 mx-4 -mt-2 mb-3">
+          <div className="flex items-start gap-2">
+            <StickyNote className="h-3 w-3 text-blue-600 mt-0.5 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-blue-800 mb-1">
+                Notes & Updates
+              </p>
+              <p className="text-xs text-blue-700 line-clamp-2">
+                {invoice.notes}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <CardContent className="space-y-3">
         <div className="grid grid-cols-2 gap-2 text-xs">
