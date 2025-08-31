@@ -125,16 +125,19 @@ export default function HomePage() {
       <div className="min-h-screen bg-background">
         <nav className="border-b">
           <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
               <h1 className="text-xl font-bold">Century Dry Cleaner</h1>
-              <Button
-                variant="outline"
-                onClick={() => initializeDatabase()}
-                disabled={loading}
-              >
-                <Database className="h-4 w-4 mr-2" />
-                Retry Connection
-              </Button>
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                <Button
+                  variant="outline"
+                  onClick={() => initializeDatabase()}
+                  disabled={loading}
+                  className="w-full sm:w-auto"
+                >
+                  <Database className="h-4 w-4 mr-2" />
+                  Retry Connection
+                </Button>
+              </div>
             </div>
           </div>
         </nav>
@@ -233,12 +236,12 @@ export default function HomePage() {
         return <AdvancedReports />;
       default:
         return (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h1 className="text-3xl font-bold">
+          <div className="space-y-4 sm:space-y-6 p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+              <h1 className="text-2xl sm:text-3xl font-bold">
                 Century Dry Cleaner Dashboard
               </h1>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-center gap-2">
                 {pickupNotifications.length > 0 && (
                   <div className="flex items-center gap-1 text-orange-600 bg-orange-100 px-3 py-1 rounded-full text-sm">
                     <Bell className="h-4 w-4" />
@@ -248,7 +251,7 @@ export default function HomePage() {
                 )}
                 <Button
                   onClick={handleNewInvoice}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 w-full sm:w-auto"
                 >
                   <Plus className="h-4 w-4" />
                   New Invoice
@@ -259,15 +262,15 @@ export default function HomePage() {
             {/* Database Connection Status */}
             <Card className="bg-green-50 border-green-200">
               <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-green-700">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-green-700">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                     <span className="text-sm font-medium">
                       Connected to Supabase - Your data is safely stored in the
                       cloud
                     </span>
                     {pickupNotifications.length > 0 && (
-                      <span className="ml-4 text-orange-700 bg-orange-200 px-2 py-1 rounded text-xs">
+                      <span className="text-orange-700 bg-orange-200 px-2 py-1 rounded text-xs">
                         Pickup notifications active
                       </span>
                     )}
@@ -277,7 +280,7 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
@@ -286,7 +289,7 @@ export default function HomePage() {
                   <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">
+                  <div className="text-xl sm:text-2xl font-bold">
                     {formatCurrency(totalToday)}
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -421,12 +424,14 @@ export default function HomePage() {
 
       <nav className="border-b">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
             <h1 className="text-xl font-bold">Century Dry Cleaner</h1>
-            <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 variant={currentView === "dashboard" ? "default" : "ghost"}
                 onClick={() => setCurrentView("dashboard")}
+                size="sm"
+                className="flex-1 sm:flex-none"
               >
                 Dashboard
                 {pickupNotifications.length > 0 && (
@@ -438,31 +443,39 @@ export default function HomePage() {
               <Button
                 variant={currentView === "invoices" ? "default" : "ghost"}
                 onClick={() => setCurrentView("invoices")}
+                size="sm"
+                className="flex-1 sm:flex-none"
               >
                 Invoices
               </Button>
               <Button
                 variant={currentView === "clients" ? "default" : "ghost"}
                 onClick={() => setCurrentView("clients")}
+                size="sm"
+                className="flex-1 sm:flex-none"
               >
                 Clients
               </Button>
               <Button
                 variant={currentView === "reports" ? "default" : "ghost"}
                 onClick={() => setCurrentView("reports")}
+                size="sm"
+                className="flex-1 sm:flex-none"
               >
                 Reports
               </Button>
               <Button
                 variant={currentView === "setup" ? "default" : "ghost"}
                 onClick={() => setCurrentView("setup")}
+                size="sm"
+                className="flex-1 sm:flex-none"
               >
                 Setup
               </Button>
               {currentUserPhone && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="ml-2">
+                    <Button variant="outline" size="sm" className="w-full sm:w-auto">
                       <UserIcon className="h-4 w-4 mr-2" />
                       <span className="hidden sm:inline">
                         {currentUserName || currentUserPhone}
@@ -482,7 +495,7 @@ export default function HomePage() {
         </div>
       </nav>
 
-      <main className="container mx-auto px-4 py-8">{renderContent()}</main>
+      <main className="container mx-auto px-4 py-4 sm:py-8">{renderContent()}</main>
       {viewInvoice && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">

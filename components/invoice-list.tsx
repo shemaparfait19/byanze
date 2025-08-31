@@ -138,21 +138,21 @@ export function InvoiceList({ onEdit }: InvoiceListProps) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">All Invoices</h1>
-        <div className="flex items-center space-x-4">
-          <div className="relative">
+    <div className="space-y-4 p-4">
+      <div className="flex flex-col space-y-4">
+        <h1 className="text-xl sm:text-2xl font-bold">All Invoices</h1>
+        <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+          <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
               placeholder="Search invoices..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-64"
+              className="pl-10 w-full"
             />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-full sm:w-40">
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
@@ -163,7 +163,7 @@ export function InvoiceList({ onEdit }: InvoiceListProps) {
             </SelectContent>
           </Select>
           <Select value={paidFilter} onValueChange={setPaidFilter}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-full sm:w-40">
               <SelectValue placeholder="Filter by payment" />
             </SelectTrigger>
             <SelectContent>
@@ -176,11 +176,127 @@ export function InvoiceList({ onEdit }: InvoiceListProps) {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Invoices ({filteredInvoices.length})</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Invoices ({filteredInvoices.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+          {/* Mobile view - Card layout */}
+          <div className="block sm:hidden space-y-4">
+            {filteredInvoices.map((invoice) => (
+              <div key={invoice.id} className="border rounded-lg p-4 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <p className="font-mono text-sm text-muted-foreground">{invoice.id}</p>
+                    <p className="font-medium">{invoice.client.name}</p>
+                    <p className="text-sm text-muted-foreground">{invoice.client.phone}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold">{formatCurrency(invoice.total)}</p>
+                    <Badge className={getStatusColor(invoice.status)}>
+                      {invoice.status}
+                    </Badge>
+                  </div>
+                </div>
+                
+                <div className="text-sm text-muted-foreground">
+                  <p>Date: {new Date(invoice.createdAt).toLocaleDateString()}</p>
+                  <p>Created by: {invoice.createdByName || "-"}</p>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <Select
+                    value={invoice.paymentMethod}
+                    onValueChange={(val) =>
+                      updateInvoicePaymentMethod(invoice.id, val)
+                    }
+                  >
+                    <SelectTrigger className="w-32 h-8 text-xs">
+                      <SelectValue placeholder="Method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="UNPAID">Unpaid</SelectItem>
+                      <SelectItem value="CASH">Cash</SelectItem>
+                      <SelectItem value="MOMO">Mobile Money</SelectItem>
+                      <SelectItem value="BANK">Bank Transfer</SelectItem>
+                      <SelectItem value="CARD">Card Payment</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <button
+                    className={`text-xs px-2 py-1 rounded border ${
+                      invoice.paid
+                        ? "border-green-300 text-green-700"
+                        : "border-yellow-300 text-yellow-700"
+                    }`}
+                    onClick={() =>
+                      updateInvoicePaid(invoice.id, !invoice.paid)
+                    }
+                  >
+                    {invoice.paid ? "Paid" : "Unpaid"}
+                  </button>
+                </div>
+
+                <div className="pt-2 border-t">
+                  <InvoiceStatusManager
+                    invoice={invoice}
+                    compact={true}
+                    showDetails={false}
+                  />
+                </div>
+
+                <div className="flex flex-wrap gap-2 pt-2 border-t">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setViewInvoice(invoice)}
+                    className="flex-1 sm:flex-none"
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    View
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onEdit(invoice.id)}
+                    className="flex-1 sm:flex-none"
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDownloadPDF(invoice)}
+                    className="flex-1 sm:flex-none"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    PDF
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleShareWhatsApp(invoice)}
+                    className="flex-1 sm:flex-none"
+                  >
+                    <Share className="h-4 w-4 mr-2" />
+                    Share
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setDeleteInvoiceId(invoice.id)}
+                    className="flex-1 sm:flex-none"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop view - Table layout */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b">
@@ -317,13 +433,13 @@ export function InvoiceList({ onEdit }: InvoiceListProps) {
                 ))}
               </tbody>
             </table>
-
-            {filteredInvoices.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                No invoices found matching your criteria.
-              </div>
-            )}
           </div>
+
+          {filteredInvoices.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              No invoices found matching your criteria.
+            </div>
+          )}
         </CardContent>
       </Card>
 

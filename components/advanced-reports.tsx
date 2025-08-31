@@ -227,11 +227,11 @@ export function AdvancedReports() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Advanced Reports</h1>
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+        <h1 className="text-xl sm:text-2xl font-bold">Advanced Reports</h1>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
           <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-            <SelectTrigger className="w-32">
+            <SelectTrigger className="w-full sm:w-32">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -246,7 +246,7 @@ export function AdvancedReports() {
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-40"
+              className="w-full sm:w-40"
             />
           )}
 
@@ -255,13 +255,13 @@ export function AdvancedReports() {
               type="month"
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
-              className="w-40"
+              className="w-full sm:w-40"
             />
           )}
 
           {selectedPeriod === "yearly" && (
             <Select value={selectedYear} onValueChange={setSelectedYear}>
-              <SelectTrigger className="w-24">
+              <SelectTrigger className="w-full sm:w-24">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -277,7 +277,11 @@ export function AdvancedReports() {
             </Select>
           )}
 
-          <Button onClick={exportReport} variant="outline">
+          <Button
+            onClick={exportReport}
+            variant="outline"
+            className="w-full sm:w-auto"
+          >
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
@@ -285,22 +289,22 @@ export function AdvancedReports() {
       </div>
 
       <div className="text-center">
-        <h2 className="text-xl font-semibold text-muted-foreground">
+        <h2 className="text-lg sm:text-xl font-semibold text-muted-foreground">
           Report for {getPeriodLabel()}
         </h2>
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+      <Tabs defaultValue="overview" className="space-y-4 sm:space-y-6">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
           <TabsTrigger value="clients">Clients</TabsTrigger>
           <TabsTrigger value="trends">Trends</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-6">
+        <TabsContent value="overview" className="space-y-4 sm:space-y-6">
           {/* Key Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
@@ -309,7 +313,7 @@ export function AdvancedReports() {
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
+                <div className="text-xl sm:text-2xl font-bold">
                   {formatCurrency(stats.totalRevenue)}
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -326,7 +330,9 @@ export function AdvancedReports() {
                 <FileText className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.totalInvoices}</div>
+                <div className="text-xl sm:text-2xl font-bold">
+                  {stats.totalInvoices}
+                </div>
                 <p className="text-xs text-muted-foreground">
                   {stats.completedInvoices} completed
                 </p>
@@ -341,7 +347,7 @@ export function AdvancedReports() {
                 <DollarSign className="h-4 w-4 text-green-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
+                <div className="text-xl sm:text-2xl font-bold">
                   {formatCurrency(stats.totalPaid)}
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -353,7 +359,7 @@ export function AdvancedReports() {
           </div>
 
           {/* Additional Metrics Row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
@@ -362,7 +368,7 @@ export function AdvancedReports() {
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
+                <div className="text-xl sm:text-2xl font-bold">
                   {formatCurrency(stats.averageInvoice)}
                 </div>
                 <p className="text-xs text-muted-foreground">Per invoice</p>
@@ -377,7 +383,9 @@ export function AdvancedReports() {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.uniqueClients}</div>
+                <div className="text-xl sm:text-2xl font-bold">
+                  {stats.uniqueClients}
+                </div>
                 <p className="text-xs text-muted-foreground">
                   Served this period
                 </p>

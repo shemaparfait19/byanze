@@ -273,45 +273,49 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">
+    <div className="max-w-4xl mx-auto space-y-4 p-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+        <h1 className="text-xl sm:text-2xl font-bold">
           {editingId ? "Edit Invoice" : "Create New Invoice"}
         </h1>
-        <div className="space-x-2">
-          <Button type="button" variant="outline" onClick={onCancel}>
+        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+          <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">
             Cancel
           </Button>
           <Button
             type="submit"
             disabled={loading}
             onClick={form.handleSubmit(onSubmit)}
+            className="w-full sm:w-auto"
           >
             {loading ? "Saving..." : editingId ? "Update" : "Create"} Invoice
           </Button>
         </div>
       </div>
 
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <Card>
-          <CardHeader>
-            <CardTitle>Client Information</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Client Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="relative">
               <Label htmlFor="clientName">Client Name</Label>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Input
                   id="clientName"
                   {...form.register("clientName")}
                   placeholder="Enter client name"
+                  className="flex-1"
                 />
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setShowClientSearch(!showClientSearch)}
+                  className="w-full sm:w-auto"
                 >
-                  <Search className="h-4 w-4" />
+                  <Search className="h-4 w-4 mr-2" />
+                  Search
                 </Button>
               </div>
               {form.formState.errors.clientName && (
@@ -374,14 +378,15 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
         </Card>
 
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Invoice Items</CardTitle>
+          <CardHeader className="pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+              <CardTitle className="text-lg">Invoice Items</CardTitle>
               <Button
                 type="button"
                 onClick={() =>
                   append({ description: "", quantity: 1, unitPrice: 0 })
                 }
+                className="w-full sm:w-auto"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Item
@@ -392,9 +397,9 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
             {fields.map((field, index) => (
               <div
                 key={field.id}
-                className="grid grid-cols-1 md:grid-cols-5 gap-4 p-4 border rounded"
+                className="grid grid-cols-1 gap-4 p-4 border rounded"
               >
-                <div className="md:col-span-2">
+                <div>
                   <Label>Description</Label>
                   <div className="relative">
                     <Input
@@ -435,36 +440,40 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
                     )}
                   </div>
                 </div>
-                <div>
-                  <Label>Quantity</Label>
-                  <Input
-                    type="number"
-                    {...form.register(`items.${index}.quantity`, {
-                      valueAsNumber: true,
-                    })}
-                    min="1"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Quantity</Label>
+                    <Input
+                      type="number"
+                      {...form.register(`items.${index}.quantity`, {
+                        valueAsNumber: true,
+                      })}
+                      min="1"
+                    />
+                  </div>
+                  <div>
+                    <Label>Unit Price (RWF)</Label>
+                    <Input
+                      type="number"
+                      {...form.register(`items.${index}.unitPrice`, {
+                        valueAsNumber: true,
+                      })}
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Label>Unit Price (RWF)</Label>
-                  <Input
-                    type="number"
-                    {...form.register(`items.${index}.unitPrice`, {
-                      valueAsNumber: true,
-                    })}
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-                <div className="flex items-end">
+                <div className="flex justify-end">
                   <Button
                     type="button"
                     variant="destructive"
                     size="sm"
                     onClick={() => remove(index)}
                     disabled={fields.length === 1}
+                    className="w-full sm:w-auto"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Remove
                   </Button>
                 </div>
               </div>
@@ -479,8 +488,8 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Payment & Delivery</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Payment & Delivery</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
@@ -529,7 +538,7 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="pickupDate">Pickup Date (Optional)</Label>
                 <Input
