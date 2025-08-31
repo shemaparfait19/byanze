@@ -101,7 +101,7 @@ export function ClientManagement() {
         await updateClient(editingClient.id, {
           name: formData.name.trim(),
           phone: formData.phone.trim(),
-          address: formData.address.trim() || undefined,
+          address: formData.address.trim() || null,
         });
         toast({ title: "Client updated successfully!" });
       } else {
