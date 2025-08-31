@@ -3,7 +3,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, CheckCircle, XCircle, Eye, Edit } from "lucide-react";
+import {
+  Clock,
+  CheckCircle,
+  XCircle,
+  Eye,
+  Edit,
+  StickyNote,
+} from "lucide-react";
 import { InvoiceStatusManager } from "@/components/invoice-status-manager";
 import { formatCurrency } from "@/lib/utils";
 import type { Invoice } from "@/lib/types";
@@ -57,6 +64,12 @@ export function InvoiceDashboardCard({
             {invoice.client.name}
           </CardTitle>
           <div className="flex items-center gap-2">
+            {invoice.notes && (
+              <Badge className="bg-blue-100 text-blue-800 text-xs">
+                <StickyNote className="h-3 w-3 mr-1" />
+                Notes
+              </Badge>
+            )}
             {getStatusIcon(invoice.status)}
             {isPickupDue() && (
               <Badge className="bg-orange-100 text-orange-800 text-xs">

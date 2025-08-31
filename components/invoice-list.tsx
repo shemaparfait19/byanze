@@ -36,6 +36,7 @@ import {
   Download,
   Share,
   Eye,
+  StickyNote,
 } from "lucide-react";
 import { useSupabaseStore } from "@/lib/supabase-store";
 import { formatCurrency } from "@/lib/utils";
@@ -177,7 +178,9 @@ export function InvoiceList({ onEdit }: InvoiceListProps) {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Invoices ({filteredInvoices.length})</CardTitle>
+          <CardTitle className="text-lg">
+            Invoices ({filteredInvoices.length})
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {/* Mobile view - Card layout */}
@@ -186,21 +189,35 @@ export function InvoiceList({ onEdit }: InvoiceListProps) {
               <div key={invoice.id} className="border rounded-lg p-4 space-y-3">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
-                    <p className="font-mono text-sm text-muted-foreground">{invoice.id}</p>
+                    <p className="font-mono text-sm text-muted-foreground">
+                      {invoice.id}
+                    </p>
                     <p className="font-medium">{invoice.client.name}</p>
-                    <p className="text-sm text-muted-foreground">{invoice.client.phone}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {invoice.client.phone}
+                    </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold">{formatCurrency(invoice.total)}</p>
+                    <p className="font-semibold">
+                      {formatCurrency(invoice.total)}
+                    </p>
                     <Badge className={getStatusColor(invoice.status)}>
                       {invoice.status}
                     </Badge>
                   </div>
                 </div>
-                
+
                 <div className="text-sm text-muted-foreground">
-                  <p>Date: {new Date(invoice.createdAt).toLocaleDateString()}</p>
+                  <p>
+                    Date: {new Date(invoice.createdAt).toLocaleDateString()}
+                  </p>
                   <p>Created by: {invoice.createdByName || "-"}</p>
+                  {invoice.notes && (
+                    <div className="flex items-center gap-2 text-blue-600 mt-1">
+                      <StickyNote className="h-4 w-4" />
+                      <span className="text-sm font-medium">Has Notes</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-wrap gap-2">
@@ -221,16 +238,14 @@ export function InvoiceList({ onEdit }: InvoiceListProps) {
                       <SelectItem value="CARD">Card Payment</SelectItem>
                     </SelectContent>
                   </Select>
-                  
+
                   <button
                     className={`text-xs px-2 py-1 rounded border ${
                       invoice.paid
                         ? "border-green-300 text-green-700"
                         : "border-yellow-300 text-yellow-700"
                     }`}
-                    onClick={() =>
-                      updateInvoicePaid(invoice.id, !invoice.paid)
-                    }
+                    onClick={() => updateInvoicePaid(invoice.id, !invoice.paid)}
                   >
                     {invoice.paid ? "Paid" : "Unpaid"}
                   </button>
@@ -282,6 +297,15 @@ export function InvoiceList({ onEdit }: InvoiceListProps) {
                     Share
                   </Button>
                   <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setViewInvoice(invoice)}
+                    className="flex-1 sm:flex-none"
+                  >
+                    <StickyNote className="h-4 w-4 mr-2" />
+                    Notes
+                  </Button>
+                  <Button
                     variant="destructive"
                     size="sm"
                     onClick={() => setDeleteInvoiceId(invoice.id)}
@@ -307,6 +331,7 @@ export function InvoiceList({ onEdit }: InvoiceListProps) {
                   <th className="text-left p-4">Amount</th>
                   <th className="text-left p-4">Status</th>
                   <th className="text-left p-4">Payment</th>
+                  <th className="text-left p-4">Notes</th>
                   <th className="text-right p-4">Actions</th>
                 </tr>
               </thead>
@@ -374,6 +399,16 @@ export function InvoiceList({ onEdit }: InvoiceListProps) {
                           </button>
                         </div>
                       </td>
+                      <td className="p-4">
+                        {invoice.notes && (
+                          <div className="flex items-center gap-2 text-blue-600">
+                            <StickyNote className="h-4 w-4" />
+                            <span className="text-sm font-medium">
+                              Has Notes
+                            </span>
+                          </div>
+                        )}
+                      </td>
                       <td className="p-4 text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -405,6 +440,12 @@ export function InvoiceList({ onEdit }: InvoiceListProps) {
                             >
                               <Share className="h-4 w-4 mr-2" />
                               Share WhatsApp
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => setViewInvoice(invoice)}
+                            >
+                              <StickyNote className="h-4 w-4 mr-2" />
+                              Notes
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => setDeleteInvoiceId(invoice.id)}

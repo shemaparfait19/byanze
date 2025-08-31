@@ -22,6 +22,7 @@ import { useSupabaseStore } from "@/lib/supabase-store";
 import { formatCurrency, generateInvoiceId } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import type { Client, Invoice, InvoiceItem } from "@/lib/types";
+import { Badge } from "@/components/ui/badge";
 
 const phoneSchema = z
   .string()
@@ -279,7 +280,12 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
           {editingId ? "Edit Invoice" : "Create New Invoice"}
         </h1>
         <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-          <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            className="w-full sm:w-auto"
+          >
             Cancel
           </Button>
           <Button
@@ -581,12 +587,25 @@ export function InvoiceForm({ editingId, onSave, onCancel }: InvoiceFormProps) {
             </div>
 
             <div>
-              <Label htmlFor="notes">Notes (Optional)</Label>
+              <Label htmlFor="notes" className="flex items-center gap-2">
+                <span>Notes & Instructions</span>
+                {form.watch("notes") && (
+                  <Badge variant="secondary" className="text-xs">
+                    Has Notes
+                  </Badge>
+                )}
+              </Label>
               <Textarea
                 id="notes"
                 {...form.register("notes")}
-                placeholder="Additional notes or instructions"
+                placeholder="Add special instructions, delivery notes, or any important information for this invoice..."
+                rows={3}
+                className="min-h-[80px]"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Use this field to add special instructions, delivery notes, or
+                any important information that staff should know.
+              </p>
             </div>
           </CardContent>
         </Card>
