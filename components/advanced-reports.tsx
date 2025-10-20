@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import * as XLSX from "xlsx";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,12 +34,29 @@ export function AdvancedReports() {
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0]
   );
+  const [selectedWeekStart, setSelectedWeekStart] = useState(
+    getWeekStart(new Date()).toISOString().split("T")[0]
+  );
   const [selectedMonth, setSelectedMonth] = useState(
     new Date().toISOString().slice(0, 7)
   );
   const [selectedYear, setSelectedYear] = useState(
     new Date().getFullYear().toString()
   );
+
+  // Helper function to get the start of the week (Monday)
+  function getWeekStart(date: Date) {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    return new Date(d.setDate(diff));
+  }
+
+  function getWeekEnd(startDate: string) {
+    const d = new Date(startDate);
+    d.setDate(d.getDate() + 6);
+    return d;
+  }
 
   const { invoices, clients } = useSupabaseStore();
 
@@ -51,6 +69,13 @@ export function AdvancedReports() {
             .toISOString()
             .split("T")[0];
           return invoiceDate === selectedDate;
+        });
+      case "weekly":
+        const weekStart = new Date(selectedWeekStart);
+        const weekEnd = getWeekEnd(selectedWeekStart);
+        return invoices.filter((invoice) => {
+          const invoiceDate = new Date(invoice.createdAt);
+          return invoiceDate >= weekStart && invoiceDate <= weekEnd;
         });
       case "monthly":
         return invoices.filter((invoice) => {
@@ -69,7 +94,7 @@ export function AdvancedReports() {
       default:
         return invoices;
     }
-  }, [invoices, selectedPeriod, selectedDate, selectedMonth, selectedYear]);
+  }, [invoices, selectedPeriod, selectedDate, selectedWeekStart, selectedMonth, selectedYear]);
 
   // Calculate comprehensive statistics
   const stats = useMemo(() => {
@@ -167,52 +192,121 @@ export function AdvancedReports() {
   }, [filteredInvoices]);
 
   const exportReport = () => {
-    const reportData = {
-      period: selectedPeriod,
-      date:
-        selectedPeriod === "daily"
-          ? selectedDate
-          : selectedPeriod === "monthly"
-          ? selectedMonth
-          : selectedYear,
-      stats,
-      invoices: filteredInvoices.map((inv) => ({
-        id: inv.id,
-        client: inv.client.name,
-        phone: inv.client.phone,
-        total: inv.total,
-        status: inv.status,
-        paymentMethod: inv.paymentMethod,
-        createdAt: inv.createdAt,
-        items: inv.items.map((item) => ({
-          description: item.description,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          totalPrice: item.totalPrice,
-        })),
-      })),
-    };
+    // Create workbook
+    const wb = XLSX.utils.book_new();
 
-    const dataStr = JSON.stringify(reportData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${selectedPeriod}-report-${
-      selectedPeriod === "daily"
+    // Summary Sheet
+    const summaryData = [
+      ["Century Dry Cleaner - Report Summary"],
+      ["Period", selectedPeriod.toUpperCase()],
+      ["Date Range", getPeriodLabel()],
+      [""],
+      ["Key Metrics"],
+      ["Total Revenue", stats.totalRevenue],
+      ["Total Paid", stats.totalPaid],
+      ["Completed Revenue", stats.completedRevenue],
+      ["Pending Revenue", stats.pendingRevenue],
+      ["Total Invoices", stats.totalInvoices],
+      ["Completed Invoices", stats.completedInvoices],
+      ["Pending Invoices", stats.pendingInvoices],
+      ["Cancelled Invoices", stats.cancelledInvoices],
+      ["Average Invoice", stats.averageInvoice],
+      ["Unique Clients", stats.uniqueClients],
+      ["Completion Rate (%)", stats.completionRate.toFixed(2)],
+      [""],
+      ["Payment Methods"],
+      ...Object.entries(stats.paymentMethods).map(([method, count]) => [
+        method,
+        count,
+      ]),
+    ];
+    const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(wb, summarySheet, "Summary");
+
+    // Invoices Detail Sheet
+    const invoicesData = filteredInvoices.map((inv) => ({
+      "Invoice ID": inv.id,
+      "Client Name": inv.client.name,
+      "Client Phone": inv.client.phone,
+      "Total Amount": inv.total,
+      "Paid": inv.paid ? "Yes" : "No",
+      "Status": inv.status,
+      "Payment Method": inv.paymentMethod,
+      "Pickup Date": inv.pickupDate || "",
+      "Pickup Time": inv.pickupTime || "",
+      "Created At": new Date(inv.createdAt).toLocaleString(),
+      "Notes": inv.notes || "",
+    }));
+    const invoicesSheet = XLSX.utils.json_to_sheet(invoicesData);
+    XLSX.utils.book_append_sheet(wb, invoicesSheet, "Invoices");
+
+    // Items Detail Sheet
+    const itemsData: any[] = [];
+    filteredInvoices.forEach((inv) => {
+      inv.items.forEach((item) => {
+        itemsData.push({
+          "Invoice ID": inv.id,
+          "Client Name": inv.client.name,
+          "Item Description": item.description,
+          Quantity: item.quantity,
+          "Unit Price": item.unitPrice,
+          "Total Price": item.totalPrice,
+        });
+      });
+    });
+    const itemsSheet = XLSX.utils.json_to_sheet(itemsData);
+    XLSX.utils.book_append_sheet(wb, itemsSheet, "Items Detail");
+
+    // Top Clients Sheet
+    const clientsData = stats.topClients.map((client, index) => ({
+      Rank: index + 1,
+      "Client Name": client.client.name,
+      "Client Phone": client.client.phone,
+      "Total Invoices": client.invoices,
+      "Completed Invoices": client.completed,
+      "Total Revenue": client.revenue,
+    }));
+    const clientsSheet = XLSX.utils.json_to_sheet(clientsData);
+    XLSX.utils.book_append_sheet(wb, clientsSheet, "Top Clients");
+
+    // Daily Breakdown Sheet (for non-daily reports)
+    if (selectedPeriod !== "daily" && Object.keys(stats.dailyBreakdown).length > 0) {
+      const dailyData = Object.entries(stats.dailyBreakdown)
+        .sort(([a], [b]) => b.localeCompare(a))
+        .map(([date, data]) => ({
+          Date: new Date(date).toLocaleDateString(),
+          Invoices: data.count,
+          Revenue: data.revenue,
+          Completed: data.completed,
+          "Completion %": data.count > 0
+            ? ((data.completed / data.count) * 100).toFixed(1)
+            : "0",
+        }));
+      const dailySheet = XLSX.utils.json_to_sheet(dailyData);
+      XLSX.utils.book_append_sheet(wb, dailySheet, "Daily Breakdown");
+    }
+
+    // Generate filename
+    const filename = `${selectedPeriod}-report-${selectedPeriod === "daily"
         ? selectedDate
+        : selectedPeriod === "weekly"
+        ? selectedWeekStart
         : selectedPeriod === "monthly"
         ? selectedMonth
         : selectedYear
-    }.json`;
-    link.click();
-    URL.revokeObjectURL(url);
+    }.xlsx`;
+
+    // Write file
+    XLSX.writeFile(wb, filename);
   };
 
   const getPeriodLabel = () => {
     switch (selectedPeriod) {
       case "daily":
         return new Date(selectedDate).toLocaleDateString();
+      case "weekly":
+        const weekEnd = getWeekEnd(selectedWeekStart);
+        return `${new Date(selectedWeekStart).toLocaleDateString()} - ${weekEnd.toLocaleDateString()}`;
       case "monthly":
         return new Date(selectedMonth + "-01").toLocaleDateString("en-US", {
           year: "numeric",
@@ -236,6 +330,7 @@ export function AdvancedReports() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="daily">Daily</SelectItem>
+              <SelectItem value="weekly">Weekly</SelectItem>
               <SelectItem value="monthly">Monthly</SelectItem>
               <SelectItem value="yearly">Yearly</SelectItem>
             </SelectContent>
@@ -247,6 +342,16 @@ export function AdvancedReports() {
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
               className="w-full sm:w-40"
+            />
+          )}
+
+          {selectedPeriod === "weekly" && (
+            <Input
+              type="date"
+              value={selectedWeekStart}
+              onChange={(e) => setSelectedWeekStart(e.target.value)}
+              className="w-full sm:w-40"
+              placeholder="Week start date"
             />
           )}
 
@@ -283,7 +388,7 @@ export function AdvancedReports() {
             className="w-full sm:w-auto"
           >
             <Download className="h-4 w-4 mr-2" />
-            Export
+            Export Excel
           </Button>
         </div>
       </div>

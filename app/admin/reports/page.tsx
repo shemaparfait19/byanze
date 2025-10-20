@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import * as XLSX from "xlsx";
 import {
   Card,
   CardContent,
@@ -13,15 +14,18 @@ import { supabase } from "@/lib/supabase";
 import { formatCurrency } from "@/lib/utils";
 
 export default function AdminReports() {
-  const [range, setRange] = useState<"today" | "7d" | "30d" | "all">("7d");
+  const [range, setRange] = useState<"today" | "7d" | "weekly" | "30d" | "all">("7d");
   const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState<any[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
+  const [items, setItems] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       const now = new Date();
       let from: string | null = null;
+      
       if (range === "today")
         from = new Date(
           now.getFullYear(),
@@ -30,6 +34,12 @@ export default function AdminReports() {
         ).toISOString();
       if (range === "7d")
         from = new Date(now.getTime() - 7 * 86400000).toISOString();
+      if (range === "weekly") {
+        // Get Monday of current week
+        const day = now.getDay();
+        const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+        from = new Date(now.setDate(diff)).toISOString();
+      }
       if (range === "30d")
         from = new Date(now.getTime() - 30 * 86400000).toISOString();
 
@@ -37,6 +47,14 @@ export default function AdminReports() {
       if (from) query = query.gte("created_at", from);
       const { data } = await query.order("created_at", { ascending: false });
       setRows(data || []);
+
+      // Fetch clients and items for Excel export
+      const { data: clientsData } = await supabase.from("clients").select("*");
+      setClients(clientsData || []);
+
+      const { data: itemsData } = await supabase.from("invoice_items").select("*");
+      setItems(itemsData || []);
+
       setLoading(false);
     };
     fetchData();
@@ -49,30 +67,84 @@ export default function AdminReports() {
     return { total, completed, pending, count: rows.length };
   }, [rows]);
 
-  const downloadCsv = () => {
-    const headers = [
-      "id",
-      "client_id",
-      "total",
-      "payment_method",
-      "status",
-      "pickup_date",
-      "pickup_time",
-      "created_at",
+  const downloadExcel = () => {
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+
+    // Summary Sheet
+    const summaryData = [
+      ["Century Dry Cleaner - Admin Report"],
+      ["Period", range.toUpperCase()],
+      ["Generated", new Date().toLocaleString()],
+      [""],
+      ["Summary"],
+      ["Total Revenue", totals.total],
+      ["Total Invoices", totals.count],
+      ["Completed", totals.completed],
+      ["Pending", totals.pending],
     ];
-    const csv = [headers.join(",")];
-    for (const r of rows) {
-      csv.push(headers.map((h) => JSON.stringify(r[h] ?? "")).join(","));
-    }
-    const blob = new Blob([csv.join("\n")], {
-      type: "text/csv;charset=utf-8;",
+    const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(wb, summarySheet, "Summary");
+
+    // Invoices Sheet
+    const invoicesData = rows.map((r) => {
+      const client = clients.find((c) => c.id === r.client_id);
+      return {
+        "Invoice ID": r.id,
+        "Client ID": r.client_id,
+        "Client Name": client?.name || "N/A",
+        "Client Phone": client?.phone || "N/A",
+        "Total": Number(r.total || 0),
+        "Payment Method": r.payment_method,
+        "Status": r.status,
+        "Paid": r.paid ? "Yes" : "No",
+        "Pickup Date": r.pickup_date || "",
+        "Pickup Time": r.pickup_time || "",
+        "Notes": r.notes || "",
+        "Created At": new Date(r.created_at).toLocaleString(),
+      };
     });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `invoices_${range}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const invoicesSheet = XLSX.utils.json_to_sheet(invoicesData);
+    XLSX.utils.book_append_sheet(wb, invoicesSheet, "Invoices");
+
+    // Items Detail Sheet
+    const invoiceIds = rows.map((r) => r.id);
+    const filteredItems = items.filter((item) =>
+      invoiceIds.includes(item.invoice_id)
+    );
+    const itemsData = filteredItems.map((item) => {
+      const invoice = rows.find((r) => r.id === item.invoice_id);
+      const client = clients.find((c) => c.id === invoice?.client_id);
+      return {
+        "Invoice ID": item.invoice_id,
+        "Client Name": client?.name || "N/A",
+        "Description": item.description,
+        "Quantity": item.quantity,
+        "Unit Price": Number(item.unit_price || 0),
+        "Total Price": Number(item.total_price || 0),
+      };
+    });
+    const itemsSheet = XLSX.utils.json_to_sheet(itemsData);
+    XLSX.utils.book_append_sheet(wb, itemsSheet, "Items Detail");
+
+    // Clients Sheet
+    const activeClientIds = [...new Set(rows.map((r) => r.client_id))];
+    const activeClients = clients
+      .filter((c) => activeClientIds.includes(c.id))
+      .map((c) => ({
+        "Client ID": c.id,
+        "Name": c.name,
+        "Phone": c.phone,
+        "Address": c.address || "",
+        "Visit Count": c.visit_count,
+        "Last Visit": c.last_visit ? new Date(c.last_visit).toLocaleString() : "",
+      }));
+    const clientsSheet = XLSX.utils.json_to_sheet(activeClients);
+    XLSX.utils.book_append_sheet(wb, clientsSheet, "Clients");
+
+    // Write file
+    const filename = `admin-report-${range}-${new Date().toISOString().split("T")[0]}.xlsx`;
+    XLSX.writeFile(wb, filename);
   };
 
   return (
@@ -93,6 +165,12 @@ export default function AdminReports() {
             7 days
           </Button>
           <Button
+            variant={range === "weekly" ? "default" : "outline"}
+            onClick={() => setRange("weekly")}
+          >
+            This Week
+          </Button>
+          <Button
             variant={range === "30d" ? "default" : "outline"}
             onClick={() => setRange("30d")}
           >
@@ -104,7 +182,7 @@ export default function AdminReports() {
           >
             All
           </Button>
-          <Button onClick={downloadCsv}>Download CSV</Button>
+          <Button onClick={downloadExcel}>Download Excel</Button>
         </div>
       </div>
 
