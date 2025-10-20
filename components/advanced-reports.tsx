@@ -195,24 +195,71 @@ export function AdvancedReports() {
     // Create workbook
     const wb = XLSX.utils.book_new();
 
+    // Main Report Sheet - Simple flat format with all details
+    const mainReportData: any[] = [];
+    
+    filteredInvoices.forEach((inv) => {
+      // For each invoice, create rows for each item
+      if (inv.items && inv.items.length > 0) {
+        inv.items.forEach((item) => {
+          mainReportData.push({
+            "Date": new Date(inv.createdAt).toLocaleDateString(),
+            "Name": inv.client.name,
+            "Tel Number": inv.client.phone,
+            "Address": inv.client.address || "N/A",
+            "Service Description": item.description,
+            "Quantity": item.quantity,
+            "Unit Price": item.unitPrice,
+            "Item Total": item.totalPrice,
+            "Invoice Total": inv.total,
+            "Paid": inv.paid ? "Paid" : "Not Paid",
+            "Payment Method": inv.paymentMethod,
+            "Status": inv.status === "completed" ? "Completed" : inv.status === "pending" ? "Pending" : "Cancelled",
+            "Pickup Date": inv.pickupDate || "N/A",
+            "Pickup Time": inv.pickupTime || "N/A",
+            "Invoice ID": inv.id,
+            "Notes": inv.notes || "",
+          });
+        });
+      } else {
+        // If no items, still add invoice row
+        mainReportData.push({
+          "Date": new Date(inv.createdAt).toLocaleDateString(),
+          "Name": inv.client.name,
+          "Tel Number": inv.client.phone,
+          "Address": inv.client.address || "N/A",
+          "Service Description": "No items",
+          "Quantity": 0,
+          "Unit Price": 0,
+          "Item Total": 0,
+          "Invoice Total": inv.total,
+          "Paid": inv.paid ? "Paid" : "Not Paid",
+          "Payment Method": inv.paymentMethod,
+          "Status": inv.status === "completed" ? "Completed" : inv.status === "pending" ? "Pending" : "Cancelled",
+          "Pickup Date": inv.pickupDate || "N/A",
+          "Pickup Time": inv.pickupTime || "N/A",
+          "Invoice ID": inv.id,
+          "Notes": inv.notes || "",
+        });
+      }
+    });
+
+    const mainSheet = XLSX.utils.json_to_sheet(mainReportData);
+    XLSX.utils.book_append_sheet(wb, mainSheet, "Report");
+
     // Summary Sheet
     const summaryData = [
       ["Century Dry Cleaner - Report Summary"],
       ["Period", selectedPeriod.toUpperCase()],
       ["Date Range", getPeriodLabel()],
       [""],
-      ["Key Metrics"],
       ["Total Revenue", stats.totalRevenue],
       ["Total Paid", stats.totalPaid],
-      ["Completed Revenue", stats.completedRevenue],
-      ["Pending Revenue", stats.pendingRevenue],
       ["Total Invoices", stats.totalInvoices],
       ["Completed Invoices", stats.completedInvoices],
       ["Pending Invoices", stats.pendingInvoices],
       ["Cancelled Invoices", stats.cancelledInvoices],
-      ["Average Invoice", stats.averageInvoice],
       ["Unique Clients", stats.uniqueClients],
-      ["Completion Rate (%)", stats.completionRate.toFixed(2)],
       [""],
       ["Payment Methods"],
       ...Object.entries(stats.paymentMethods).map(([method, count]) => [
@@ -223,71 +270,8 @@ export function AdvancedReports() {
     const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
     XLSX.utils.book_append_sheet(wb, summarySheet, "Summary");
 
-    // Invoices Detail Sheet
-    const invoicesData = filteredInvoices.map((inv) => ({
-      "Invoice ID": inv.id,
-      "Client Name": inv.client.name,
-      "Client Phone": inv.client.phone,
-      "Total Amount": inv.total,
-      "Paid": inv.paid ? "Yes" : "No",
-      "Status": inv.status,
-      "Payment Method": inv.paymentMethod,
-      "Pickup Date": inv.pickupDate || "",
-      "Pickup Time": inv.pickupTime || "",
-      "Created At": new Date(inv.createdAt).toLocaleString(),
-      "Notes": inv.notes || "",
-    }));
-    const invoicesSheet = XLSX.utils.json_to_sheet(invoicesData);
-    XLSX.utils.book_append_sheet(wb, invoicesSheet, "Invoices");
-
-    // Items Detail Sheet
-    const itemsData: any[] = [];
-    filteredInvoices.forEach((inv) => {
-      inv.items.forEach((item) => {
-        itemsData.push({
-          "Invoice ID": inv.id,
-          "Client Name": inv.client.name,
-          "Item Description": item.description,
-          Quantity: item.quantity,
-          "Unit Price": item.unitPrice,
-          "Total Price": item.totalPrice,
-        });
-      });
-    });
-    const itemsSheet = XLSX.utils.json_to_sheet(itemsData);
-    XLSX.utils.book_append_sheet(wb, itemsSheet, "Items Detail");
-
-    // Top Clients Sheet
-    const clientsData = stats.topClients.map((client, index) => ({
-      Rank: index + 1,
-      "Client Name": client.client.name,
-      "Client Phone": client.client.phone,
-      "Total Invoices": client.invoices,
-      "Completed Invoices": client.completed,
-      "Total Revenue": client.revenue,
-    }));
-    const clientsSheet = XLSX.utils.json_to_sheet(clientsData);
-    XLSX.utils.book_append_sheet(wb, clientsSheet, "Top Clients");
-
-    // Daily Breakdown Sheet (for non-daily reports)
-    if (selectedPeriod !== "daily" && Object.keys(stats.dailyBreakdown).length > 0) {
-      const dailyData = Object.entries(stats.dailyBreakdown)
-        .sort(([a], [b]) => b.localeCompare(a))
-        .map(([date, data]) => ({
-          Date: new Date(date).toLocaleDateString(),
-          Invoices: data.count,
-          Revenue: data.revenue,
-          Completed: data.completed,
-          "Completion %": data.count > 0
-            ? ((data.completed / data.count) * 100).toFixed(1)
-            : "0",
-        }));
-      const dailySheet = XLSX.utils.json_to_sheet(dailyData);
-      XLSX.utils.book_append_sheet(wb, dailySheet, "Daily Breakdown");
-    }
-
     // Generate filename
-    const filename = `${selectedPeriod}-report-${selectedPeriod === "daily"
+    const filename = `century-report-${selectedPeriod}-${selectedPeriod === "daily"
         ? selectedDate
         : selectedPeriod === "weekly"
         ? selectedWeekStart

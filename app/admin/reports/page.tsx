@@ -71,13 +71,71 @@ export default function AdminReports() {
     // Create workbook
     const wb = XLSX.utils.book_new();
 
+    // Main Report Sheet - Simple flat format
+    const mainReportData: any[] = [];
+    const invoiceIds = rows.map((r) => r.id);
+    const filteredItems = items.filter((item) =>
+      invoiceIds.includes(item.invoice_id)
+    );
+
+    rows.forEach((r) => {
+      const client = clients.find((c) => c.id === r.client_id);
+      const invoiceItems = filteredItems.filter(
+        (item) => item.invoice_id === r.id
+      );
+
+      if (invoiceItems.length > 0) {
+        invoiceItems.forEach((item) => {
+          mainReportData.push({
+            "Date": new Date(r.created_at).toLocaleDateString(),
+            "Name": client?.name || "N/A",
+            "Tel Number": client?.phone || "N/A",
+            "Address": client?.address || "N/A",
+            "Service Description": item.description,
+            "Quantity": item.quantity,
+            "Unit Price": Number(item.unit_price || 0),
+            "Item Total": Number(item.total_price || 0),
+            "Invoice Total": Number(r.total || 0),
+            "Paid": r.paid ? "Paid" : "Not Paid",
+            "Payment Method": r.payment_method,
+            "Status": r.status === "completed" ? "Completed" : r.status === "pending" ? "Pending" : "Cancelled",
+            "Pickup Date": r.pickup_date || "N/A",
+            "Pickup Time": r.pickup_time || "N/A",
+            "Invoice ID": r.id,
+            "Notes": r.notes || "",
+          });
+        });
+      } else {
+        mainReportData.push({
+          "Date": new Date(r.created_at).toLocaleDateString(),
+          "Name": client?.name || "N/A",
+          "Tel Number": client?.phone || "N/A",
+          "Address": client?.address || "N/A",
+          "Service Description": "No items",
+          "Quantity": 0,
+          "Unit Price": 0,
+          "Item Total": 0,
+          "Invoice Total": Number(r.total || 0),
+          "Paid": r.paid ? "Paid" : "Not Paid",
+          "Payment Method": r.payment_method,
+          "Status": r.status === "completed" ? "Completed" : r.status === "pending" ? "Pending" : "Cancelled",
+          "Pickup Date": r.pickup_date || "N/A",
+          "Pickup Time": r.pickup_time || "N/A",
+          "Invoice ID": r.id,
+          "Notes": r.notes || "",
+        });
+      }
+    });
+
+    const mainSheet = XLSX.utils.json_to_sheet(mainReportData);
+    XLSX.utils.book_append_sheet(wb, mainSheet, "Report");
+
     // Summary Sheet
     const summaryData = [
       ["Century Dry Cleaner - Admin Report"],
       ["Period", range.toUpperCase()],
       ["Generated", new Date().toLocaleString()],
       [""],
-      ["Summary"],
       ["Total Revenue", totals.total],
       ["Total Invoices", totals.count],
       ["Completed", totals.completed],
@@ -86,64 +144,8 @@ export default function AdminReports() {
     const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
     XLSX.utils.book_append_sheet(wb, summarySheet, "Summary");
 
-    // Invoices Sheet
-    const invoicesData = rows.map((r) => {
-      const client = clients.find((c) => c.id === r.client_id);
-      return {
-        "Invoice ID": r.id,
-        "Client ID": r.client_id,
-        "Client Name": client?.name || "N/A",
-        "Client Phone": client?.phone || "N/A",
-        "Total": Number(r.total || 0),
-        "Payment Method": r.payment_method,
-        "Status": r.status,
-        "Paid": r.paid ? "Yes" : "No",
-        "Pickup Date": r.pickup_date || "",
-        "Pickup Time": r.pickup_time || "",
-        "Notes": r.notes || "",
-        "Created At": new Date(r.created_at).toLocaleString(),
-      };
-    });
-    const invoicesSheet = XLSX.utils.json_to_sheet(invoicesData);
-    XLSX.utils.book_append_sheet(wb, invoicesSheet, "Invoices");
-
-    // Items Detail Sheet
-    const invoiceIds = rows.map((r) => r.id);
-    const filteredItems = items.filter((item) =>
-      invoiceIds.includes(item.invoice_id)
-    );
-    const itemsData = filteredItems.map((item) => {
-      const invoice = rows.find((r) => r.id === item.invoice_id);
-      const client = clients.find((c) => c.id === invoice?.client_id);
-      return {
-        "Invoice ID": item.invoice_id,
-        "Client Name": client?.name || "N/A",
-        "Description": item.description,
-        "Quantity": item.quantity,
-        "Unit Price": Number(item.unit_price || 0),
-        "Total Price": Number(item.total_price || 0),
-      };
-    });
-    const itemsSheet = XLSX.utils.json_to_sheet(itemsData);
-    XLSX.utils.book_append_sheet(wb, itemsSheet, "Items Detail");
-
-    // Clients Sheet
-    const activeClientIds = [...new Set(rows.map((r) => r.client_id))];
-    const activeClients = clients
-      .filter((c) => activeClientIds.includes(c.id))
-      .map((c) => ({
-        "Client ID": c.id,
-        "Name": c.name,
-        "Phone": c.phone,
-        "Address": c.address || "",
-        "Visit Count": c.visit_count,
-        "Last Visit": c.last_visit ? new Date(c.last_visit).toLocaleString() : "",
-      }));
-    const clientsSheet = XLSX.utils.json_to_sheet(activeClients);
-    XLSX.utils.book_append_sheet(wb, clientsSheet, "Clients");
-
     // Write file
-    const filename = `admin-report-${range}-${new Date().toISOString().split("T")[0]}.xlsx`;
+    const filename = `century-admin-report-${range}-${new Date().toISOString().split("T")[0]}.xlsx`;
     XLSX.writeFile(wb, filename);
   };
 
